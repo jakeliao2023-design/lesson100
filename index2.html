@@ -129,6 +129,7 @@
       </h1>
       <span class="pill">普通：点列表播中文｜测验：题目=泰语+泰语音频；答案=中文+拼音（四选一）</span>
       <span class="pill" id="status">未加载</span>
+      <span class="pill" id="csvWhere" style="display:none">CSV：—</span>
     </div>
   </div>
 </header>
@@ -142,6 +143,20 @@
         <input id="q" type="text" placeholder="搜索：泰语 / 中文 / 拼音 / key …" />
         <button class="btn tight" id="clear">清空</button>
       </div>
+      <div class="bd" style="padding-top:10px">
+        <div class="row" style="margin-bottom:10px">
+          <input id="csvUrl" type="text" placeholder="CSV 地址（可选）：例如 ./phrases.csv 或 https://.../phrases.csv" />
+          <button class="btn tight secondary" id="loadCsvBtn">加载CSV</button>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <input id="csvFile" type="file" accept=".csv,text/csv" />
+          <button class="btn tight" id="useFileBtn">用本地CSV</button>
+        </div>
+        <div class="note" style="margin:-2px 0 10px">
+          手机/平板如果出现“无法加载CSV”：通常是 <code>phrases.csv</code> 路径不对或页面不是通过网站方式打开（不要用 <code>file://</code>）。
+        </div>
+      </div>
+      <div class="bd" style="padding-top:0">
       <div class="bd">
         <div class="row" style="margin-bottom:10px">
           <button class="btn" id="quiz">🎧 听音问答<br/>แบบทดสอบฟังเสียง</button>
@@ -314,25 +329,49 @@ function parseCSV(text){
   return rows;
 }
 
-async function loadCSV(){
-  const res = await fetch("phrases.csv", { cache: "no-store" });
-  if (!res.ok) throw new Error("phrases.csv not found");
-  const text = await res.text();
-  let rows = parseCSV(text);
+async function loadCSV(customUrl){
+  const candidates = [];
+  if (customUrl && String(customUrl).trim()) candidates.push(String(customUrl).trim());
+  candidates.push("./phrases.csv");
+  candidates.push("phrases.csv");
+  candidates.push("./data/phrases.csv");
 
-  const head = (rows[0] || []).map(x => (x || "").toLowerCase());
-  const hasHeader = head.includes("thai") || head.includes("chinese_pinyin") || head.includes("tts_key");
-  if (hasHeader) rows = rows.slice(1);
+  let lastErr = null;
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      const text = await res.text();
+      let rows = parseCSV(text);
 
-  const out = [];
-  for (const r of rows) {
-    const thai = (r[0] || "").trim();
-    const zhpy = (r[1] || "").trim();
-    const key  = (r[2] || "").trim();
-    if (!thai || !zhpy || !key) continue;
-    out.push([thai, zhpy, key]);
+      const head = (rows[0] || []).map(x => (x || "").toLowerCase());
+      const hasHeader = head.includes("thai") || head.includes("chinese_pinyin") || head.includes("tts_key");
+      if (hasHeader) rows = rows.slice(1);
+
+      const out = [];
+      for (const r of rows) {
+        const thai = (r[0] || "").trim();
+        const zhpy = (r[1] || "").trim();
+        const key  = (r[2] || "").trim();
+        if (!thai || !zhpy || !key) continue;
+        out.push([thai, zhpy, key]);
+      }
+
+      if (!out.length) throw new Error("CSV parsed but empty (check columns: Thai,Chinese_Pinyin,TTS_Key)");
+
+      // remember where
+      csvWhereEl.style.display = "inline-block";
+      csvWhereEl.textContent = "CSV：" + url;
+      return out;
+    } catch (e) {
+      lastErr = { url, err: e };
+    }
   }
-  return out;
+
+  const msg = lastErr
+    ? `Tried: ${lastErr.url}\n${lastErr.err && lastErr.err.message ? lastErr.err.message : String(lastErr.err)}`
+    : "Unknown error";
+  throw new Error("无法加载 CSV。\n" + msg + "\n\n检查：1) phrases.csv 是否与网页同目录 2) 文件名大小写一致 3) 用 GitHub Pages/本地服务器打开，不要 file:// 4) CSV 编码 UTF-8");
 }
 
 function splitZhPy(zhpy){
@@ -369,6 +408,7 @@ function shuffle(arr){
 const listEl = el("list");
 const qEl = el("q");
 const statusEl = el("status");
+const csvWhereEl = el("csvWhere");
 const modeEl = el("mode");
 
 const bigTH = el("bigTH");
@@ -864,9 +904,8 @@ el("clearWrong").addEventListener("click", clearWrong);
   try {
     statusEl.textContent = "加载中…";
     DATA = await loadCSV();
-    if (!DATA.length) throw new Error("CSV empty");
     VIEW = DATA.slice();
-    statusEl.textContent = "已加载：phrases.csv（" + DATA.length + "条）";
+    statusEl.textContent = "已加载：" + DATA.length + "条";
 
     updateModeUI();
     renderList();
@@ -875,10 +914,73 @@ el("clearWrong").addEventListener("click", clearWrong);
     applyMobileTabs();
   } catch (e) {
     console.error(e);
-    statusEl.textContent = "错误：无法加载";
-    alert("初始化失败：" + (e && e.message ? e.message : String(e)));
+    statusEl.textContent = "错误：无法加载CSV";
+    alert("无法加载CSV。\n\n" + (e && e.message ? e.message : String(e)));
   }
 })();
+
+// Manual load CSV URL
+el("loadCsvBtn").addEventListener("click", async () => {
+  try {
+    statusEl.textContent = "加载中…";
+    const url = el("csvUrl").value || "";
+    DATA = await loadCSV(url);
+    VIEW = DATA.slice();
+    activeIdx = 0; quizIdx = 0; answered = false; currentChoices = null;
+    statusEl.textContent = "已加载：" + DATA.length + "条";
+    updateModeUI();
+    renderList();
+    renderStudyCard();
+    applyMobileTabs();
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = "错误：无法加载CSV";
+    alert("加载失败：\n" + (e && e.message ? e.message : String(e)));
+  }
+});
+
+// Local file load
+el("useFileBtn").addEventListener("click", async () => {
+  const f = (el("csvFile") && el("csvFile").files && el("csvFile").files[0]) ? el("csvFile").files[0] : null;
+  if (!f) return alert("请选择一个 CSV 文件");
+  try {
+    statusEl.textContent = "读取本地CSV…";
+    const text = await f.text();
+    let rows = parseCSV(text);
+
+    const head = (rows[0] || []).map(x => (x || "").toLowerCase());
+    const hasHeader = head.includes("thai") || head.includes("chinese_pinyin") || head.includes("tts_key");
+    if (hasHeader) rows = rows.slice(1);
+
+    const out = [];
+    for (const r of rows) {
+      const thai = (r[0] || "").trim();
+      const zhpy = (r[1] || "").trim();
+      const key  = (r[2] || "").trim();
+      if (!thai || !zhpy || !key) continue;
+      out.push([thai, zhpy, key]);
+    }
+
+    if (!out.length) throw new Error("CSV parsed but empty (check columns: Thai,Chinese_Pinyin,TTS_Key)");
+
+    DATA = out;
+    VIEW = DATA.slice();
+    csvWhereEl.style.display = "inline-block";
+    csvWhereEl.textContent = "CSV：本地文件 " + f.name;
+
+    activeIdx = 0; quizIdx = 0; answered = false; currentChoices = null;
+    statusEl.textContent = "已加载：" + DATA.length + "条";
+
+    updateModeUI();
+    renderList();
+    renderStudyCard();
+    applyMobileTabs();
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = "错误：无法加载CSV";
+    alert("本地CSV解析失败：\n" + (e && e.message ? e.message : String(e)));
+  }
+});
 </script>
 </body>
 </html>
