@@ -334,18 +334,17 @@ async function loadCSV(){
     res = await fetch(url, { cache: "no-store" });
   } catch (e) {
     throw new Error(
-      "无法加载CSV（网络请求失败）。\n" +
-      "Request URL: " + url + "\n" +
-      "提示：请确认用 GitHub Pages 方式打开（不要 file:// / Drive 预览）。\n" +
+      "无法加载CSV（网络请求失败）。" +      "Request URL: " + url + "" +
+      "提示：请确认用 GitHub Pages 方式打开（不要 file:// / Drive 预览）。" +
       "原始错误：" + (e && e.message ? e.message : String(e))
     );
   }
 
   if (!res.ok) {
     throw new Error(
-      "无法加载CSV（HTTP错误）。\n" +
-      "Request URL: " + url + "\n" +
-      "Status: " + res.status + " " + res.statusText + "\n" +
+      "无法加载CSV（HTTP错误）。" +
+      "Request URL: " + url + "" +
+      "Status: " + res.status + " " + res.statusText + "" +
       "检查：1) 仓库根目录是否存在 phrases.csv 2) 文件名大小写是否严格一致 3) GitHub Pages 发布源是否为 main / root"
     );
   }
@@ -369,8 +368,8 @@ async function loadCSV(){
 
   if (!out.length) {
     throw new Error(
-      "CSV 已下载但解析结果为空。\n" +
-      "Request URL: " + url + "\n" +
+      "CSV 已下载但解析结果为空。" +
+      "Request URL: " + url + "" +
       "请确认 CSV 为 3 列：Thai,Chinese_Pinyin,TTS_Key 且为 UTF-8。"
     );
   }
@@ -810,8 +809,16 @@ audio.addEventListener("ended", async () => {
 el("clear").addEventListener("click", () => { qEl.value = ""; applyFilter(); });
 qEl.addEventListener("input", applyFilter);
 
-el("next").addEventListener("click", next);
-el("prev").addEventListener("click", prev);
+el("next").addEventListener("click", async () => {
+  next();
+  if (quizMode) await playThai();
+  else await playChinese();
+});
+el("prev").addEventListener("click", async () => {
+  prev();
+  if (quizMode) await playThai();
+  else await playChinese();
+});
 
 // Card navigation (mobile-friendly)
 el("prevQ").addEventListener("click", async () => {
@@ -819,9 +826,15 @@ el("prevQ").addEventListener("click", async () => {
   if (quizMode) await playThai();
   else await playChinese();
 });
+  if (quizMode) await playThai();
+  else await playChinese();
+});
 
 el("nextQ").addEventListener("click", async () => {
   next();
+  if (quizMode) await playThai();
+  else await playChinese();
+});
   if (quizMode) await playThai();
   else await playChinese();
 });
