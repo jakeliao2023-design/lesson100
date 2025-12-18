@@ -238,7 +238,12 @@
     return `audio/${key}.mp3`;
   }
   function thAudioPath(key) {
-    return `audio_th/${key}.mp3`;
+    // 泰语音频命名规则：th_0001.mp3，与 CSV 顺序一致
+    // 从 key 中取序号（如 zh_cn_0001 -> 0001）
+    const m = key.match(/(\d+)$/);
+    const num = m ? m[1].padStart(4, "0") : "0001";
+    return "audio_th/th_" + num + ".mp3";
+  }.mp3`;
   }
 
   function currentKey() {
