@@ -129,7 +129,7 @@
       </h1>
       <span class="pill">普通：点列表播中文｜测验：题目=泰语+泰语音频；答案=中文+拼音（四选一）</span>
       <span class="pill" id="status">未加载</span>
-      <span class="pill" id="csvWhere" style="display:none">CSV：—</span>
+      <span class="pill" id="csvWhere" style="display:inline-block">CSV：/lesson100/phrases.csv</span>
     </div>
   </div>
 </header>
@@ -145,15 +145,8 @@
       </div>
       <div class="bd" style="padding-top:10px">
         <div class="row" style="margin-bottom:10px">
-          <input id="csvUrl" type="text" placeholder="CSV 地址（可选）：例如 ./phrases.csv 或 https://.../phrases.csv" />
-          <button class="btn tight secondary" id="loadCsvBtn">加载CSV</button>
-        </div>
-        <div class="row" style="margin-bottom:10px">
-          <input id="csvFile" type="file" accept=".csv,text/csv" />
-          <button class="btn tight" id="useFileBtn">用本地CSV</button>
-        </div>
-        <div class="note" style="margin:-2px 0 10px">
-          手机/平板如果出现“无法加载CSV”：通常是 <code>phrases.csv</code> 路径不对或页面不是通过网站方式打开（不要用 <code>file://</code>）。
+          <div class="note" style="margin:-2px 0 10px">
+          CSV 固定从：<code>/lesson100/phrases.csv</code> 加载（不再猜路径）。
         </div>
       </div>
       <div class="bd" style="padding-top:0">
@@ -329,49 +322,66 @@ function parseCSV(text){
   return rows;
 }
 
-async function loadCSV(customUrl){
-  const candidates = [];
-  if (customUrl && String(customUrl).trim()) candidates.push(String(customUrl).trim());
-  candidates.push("./phrases.csv");
-  candidates.push("phrases.csv");
-  candidates.push("./data/phrases.csv");
+async function loadCSV(){
+  // ✅ Locked to your GitHub Pages structure:
+  // Page:   https://jakeliao2023-design.github.io/lesson100/index2.html
+  // CSV:    https://jakeliao2023-design.github.io/lesson100/phrases.csv
+  // (No guessing, no alternative paths.)
+  const url = "/lesson100/phrases.csv";
 
-  let lastErr = null;
-  for (const url of candidates) {
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-      const text = await res.text();
-      let rows = parseCSV(text);
-
-      const head = (rows[0] || []).map(x => (x || "").toLowerCase());
-      const hasHeader = head.includes("thai") || head.includes("chinese_pinyin") || head.includes("tts_key");
-      if (hasHeader) rows = rows.slice(1);
-
-      const out = [];
-      for (const r of rows) {
-        const thai = (r[0] || "").trim();
-        const zhpy = (r[1] || "").trim();
-        const key  = (r[2] || "").trim();
-        if (!thai || !zhpy || !key) continue;
-        out.push([thai, zhpy, key]);
-      }
-
-      if (!out.length) throw new Error("CSV parsed but empty (check columns: Thai,Chinese_Pinyin,TTS_Key)");
-
-      // remember where
-      csvWhereEl.style.display = "inline-block";
-      csvWhereEl.textContent = "CSV：" + url;
-      return out;
-    } catch (e) {
-      lastErr = { url, err: e };
-    }
+  let res;
+  try {
+    res = await fetch(url, { cache: "no-store" });
+  } catch (e) {
+    throw new Error(
+      "无法加载CSV（网络请求失败）。\n" +
+      "Request URL: " + url + "\n" +
+      "提示：请确认用 GitHub Pages 方式打开（不要 file:// / Drive 预览）。\n" +
+      "原始错误：" + (e && e.message ? e.message : String(e))
+    );
   }
 
-  const msg = lastErr
-    ? `Tried: ${lastErr.url}\n${lastErr.err && lastErr.err.message ? lastErr.err.message : String(lastErr.err)}`
-    : "Unknown error";
-  throw new Error("无法加载 CSV。\n" + msg + "\n\n检查：1) phrases.csv 是否与网页同目录 2) 文件名大小写一致 3) 用 GitHub Pages/本地服务器打开，不要 file:// 4) CSV 编码 UTF-8");
+  if (!res.ok) {
+    throw new Error(
+      "无法加载CSV（HTTP错误）。\n" +
+      "Request URL: " + url + "\n" +
+      "Status: " + res.status + " " + res.statusText + "\n" +
+      "检查：1) 仓库根目录是否存在 phrases.csv 2) 文件名大小写是否严格一致 3) GitHub Pages 发布源是否为 main / root"
+    );
+  }
+
+  const text = await res.text();
+  let rows = parseCSV(text);
+
+  // header optional
+  const head = (rows[0] || []).map(x => (x || "").toLowerCase());
+  const hasHeader = head.includes("thai") || head.includes("chinese_pinyin") || head.includes("tts_key");
+  if (hasHeader) rows = rows.slice(1);
+
+  const out = [];
+  for (const r of rows) {
+    const thai = (r[0] || "").trim();
+    const zhpy = (r[1] || "").trim();
+    const key  = (r[2] || "").trim();
+    if (!thai || !zhpy || !key) continue;
+    out.push([thai, zhpy, key]);
+  }
+
+  if (!out.length) {
+    throw new Error(
+      "CSV 已下载但解析结果为空。\n" +
+      "Request URL: " + url + "\n" +
+      "请确认 CSV 为 3 列：Thai,Chinese_Pinyin,TTS_Key 且为 UTF-8。"
+    );
+  }
+
+  // show where loaded
+  if (csvWhereEl) {
+    csvWhereEl.style.display = "inline-block";
+    csvWhereEl.textContent = "CSV：" + url;
+  }
+
+  return out;
 }
 
 function splitZhPy(zhpy){
@@ -915,34 +925,13 @@ el("clearWrong").addEventListener("click", clearWrong);
   } catch (e) {
     console.error(e);
     statusEl.textContent = "错误：无法加载CSV";
-    alert("无法加载CSV。\n\n" + (e && e.message ? e.message : String(e)));
+    alert("无法加载CSV。" + (e && e.message ? e.message : String(e)));
   }
 })();
 
 // Manual load CSV URL
-el("loadCsvBtn").addEventListener("click", async () => {
-  try {
-    statusEl.textContent = "加载中…";
-    const url = el("csvUrl").value || "";
-    DATA = await loadCSV(url);
-    VIEW = DATA.slice();
-    activeIdx = 0; quizIdx = 0; answered = false; currentChoices = null;
-    statusEl.textContent = "已加载：" + DATA.length + "条";
-    updateModeUI();
-    renderList();
-    renderStudyCard();
-    applyMobileTabs();
-  } catch (e) {
-    console.error(e);
-    statusEl.textContent = "错误：无法加载CSV";
-    alert("加载失败：\n" + (e && e.message ? e.message : String(e)));
-  }
-});
-
-// Local file load
-el("useFileBtn").addEventListener("click", async () => {
-  const f = (el("csvFile") && el("csvFile").files && el("csvFile").files[0]) ? el("csvFile").files[0] : null;
-  if (!f) return alert("请选择一个 CSV 文件");
+// ✅ CSV loading is locked to /lesson100/phrases.csv
+// (No manual URL / local file loaders)
   try {
     statusEl.textContent = "读取本地CSV…";
     const text = await f.text();
@@ -978,7 +967,7 @@ el("useFileBtn").addEventListener("click", async () => {
   } catch (e) {
     console.error(e);
     statusEl.textContent = "错误：无法加载CSV";
-    alert("本地CSV解析失败：\n" + (e && e.message ? e.message : String(e)));
+    alert("本地CSV解析失败：" + (e && e.message ? e.message : String(e)));
   }
 });
 </script>
