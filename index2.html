@@ -61,7 +61,7 @@
     code{background:#071022;padding:2px 6px;border-radius:8px;border:1px solid var(--border)}
     .warn{color:#fbbf24}
 
-    /* 听力考试模式：全遮文字（显示为占位块），点击"显示答案"才恢复 */
+    /* 听力考试模式：全遮文字（显示为占位块），点“显示答案”才临时露出 */
     body.exam .th, body.exam .zh,
     body.exam #bigTH, body.exam #bigZH, body.exam #bigPY {
       color: transparent !important;
@@ -123,7 +123,7 @@
           <span class="toggle"><input type="radio" name="speed" id="spdNormal" checked /> 正常语速<br/>ความเร็วปกติ</span>
           <span class="toggle"><input type="radio" name="speed" id="spdSlow" /> 慢速<br/>ช้า</span>
           <span class="toggle"><input type="checkbox" id="exam" /> 听力考试（全遮文字）<br/>โหมดสอบฟัง</span>
-          <button class="btn" id="reveal">👁 显示答案<br/>แสดงคำตอบ</button>
+          <button class="btn" id="reveal">👁 显示答案（3秒）<br/>แสดงคำตอบ</button>
         </div>
 
         <div class="banner" id="examBanner">🎧 听力考试模式：先听音频，再选答案；可用“显示答案”查看。<br/>โหมดสอบฟัง: ฟังก่อน แล้วเลือกคำตอบ</div>
@@ -272,7 +272,7 @@
   }
 
   function splitZhPy(zhpy) {
-    // 尝试把“中文 + 空格 + 拼音”拆开
+    // “中文 + 空格 + 拼音”拆分（若你CSV里是“中文 pinyin”，可拆；否则拼音为空）
     const m = zhpy.match(/^(.*?)(\s+[A-Za-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ\s]+.*)$/);
     if (!m) return { zh: zhpy, py: "" };
     return { zh: m[1].trim(), py: m[2].trim() };
@@ -338,8 +338,7 @@
             const correct = VIEW.find(x => x[2] === quizAnswerKey);
             alert("❌ 错误 / ไม่ถูกต้อง\n正确答案 / คำตอบที่ถูก: " + (correct ? correct[0] : ""));
           }
-
-          // 退出练习，回到普通列表，并定位到正确句
+          // 退出练习并定位正确句
           quizMode = false;
           quizOptions = null;
           const idxInView = VIEW.findIndex(x => x[2] === quizAnswerKey);
@@ -348,7 +347,6 @@
           return;
         }
 
-        // 普通模式：按 key 定位
         const idxInView = VIEW.findIndex(x => x[2] === key);
         select(idxInView >= 0 ? idxInView : 0, true);
       });
@@ -373,14 +371,6 @@
     keyEl.textContent = key;
     fileEl.textContent = preferredSlow() ? audioPath(key, true) : audioPath(key, false);
 
-    if (!quizMode) {
-      [...listEl.querySelectorAll(".item")].forEach((node) => node.classList.remove("active"));
-      // 仅在普通列表时尝试高亮当前项
-      const nodes = [...listEl.querySelectorAll(".item")];
-      // activeIdx 对应 VIEW 索引，renderList 也用 VIEW，所以对齐
-      if (nodes[activeIdx]) nodes[activeIdx].classList.add("active");
-    }
-
     if (scrollIntoView && !quizMode) {
       const node = listEl.querySelectorAll(".item")[activeIdx];
       node?.scrollIntoView({ block: "nearest" });
@@ -388,7 +378,7 @@
   }
 
   async function playKey(key) {
-    // 优先播放慢速；如果没有慢速文件，自动回退到正常
+    // 优先慢速，失败则回退正常
     const slow = preferredSlow();
     const try1 = audioPath(key, slow);
     const try2 = audioPath(key, false);
@@ -399,11 +389,8 @@
     try {
       await audio.play();
       return;
-    } catch (e) {
-      // 可能是浏览器权限问题，或资源 404
-    }
+    } catch (e) {}
 
-    // 尝试回退到正常语速
     audio.src = try2;
     try {
       await audio.play();
@@ -440,14 +427,12 @@
 
   function applyFilter() {
     const q = (qEl.value || "").trim().toLowerCase();
-
     // 过滤时退出练习
     quizMode = false;
     quizOptions = null;
 
-    if (!q) {
-      VIEW = DATA.slice();
-    } else {
+    if (!q) VIEW = DATA.slice();
+    else {
       VIEW = DATA.filter(([thai, zhpy, key]) =>
         thai.toLowerCase().includes(q) ||
         zhpy.toLowerCase().includes(q) ||
@@ -485,7 +470,6 @@
     }
 
     quizMode = true;
-
     const answer = VIEW[Math.floor(Math.random() * VIEW.length)];
     quizAnswerKey = answer[2];
 
@@ -499,18 +483,15 @@
 
   function setExamMode(on) {
     document.body.classList.toggle("exam", !!on);
+    examBanner.classList.toggle("banner", true);
     examBanner.style.display = on ? "block" : "none";
-    if (on) {
-      statusEl.textContent = "听力考试模式 / โหมดสอบฟัง";
-    } else {
-      statusEl.textContent = `已加载：phrases.csv（${DATA.length}条）`;
-    }
+    if (on) statusEl.textContent = "听力考试模式 / โหมดสอบฟัง";
+    else statusEl.textContent = `已加载：phrases.csv（${DATA.length}条）`;
   }
 
   function revealOnce() {
     // 临时显示答案 3 秒
-    const was = document.body.classList.contains("exam");
-    if (!was) return;
+    if (!document.body.classList.contains("exam")) return;
     document.body.classList.remove("exam");
     setTimeout(() => document.body.classList.add("exam"), 3000);
   }
@@ -535,7 +516,7 @@
   el("clear").addEventListener("click", () => { qEl.value = ""; applyFilter(); });
   qEl.addEventListener("input", () => applyFilter());
 
-  // Speed toggle affects only fileEl preview; playback reads current selection each time
+  // Speed toggles only need to refresh displayed file path
   spdNormal.addEventListener("change", () => select(activeIdx, false));
   spdSlow.addEventListener("change", () => select(activeIdx, false));
 
