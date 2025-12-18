@@ -22,19 +22,38 @@
     @media(min-width:900px){.grid{grid-template-columns:380px 1fr}}
 
     @media(max-width:699px){
+      :root{ --tap:44px; }
       .wrap{padding:12px}
-      header .wrap{padding:12px}
-      h1{font-size:16px}
+      header .wrap{padding:10px 12px}
+      h1{font-size:16px;line-height:1.2}
       .pill{font-size:11px}
+
+      /* single column; panels become “pages” via tabs */
       .grid{gap:10px}
-      .panel .hd{padding:10px}
+      .panel{border-radius:16px}
+      .panel .hd{padding:10px;gap:8px}
       .panel .bd{padding:10px}
-      .btn{padding:10px 12px;font-size:13px;border-radius:12px}
-      .bigTH{font-size:20px}
-      .bigZH{font-size:18px}
-      .bigPY{font-size:14px}
-      .list{max-height:none;height:calc(100dvh - 220px)}
-      main.wrap{padding-bottom:76px}
+
+      /* Buttons: larger tap targets */
+      .btn{min-height:var(--tap);padding:10px 12px;font-size:13px;border-radius:14px}
+      input[type="text"]{min-height:var(--tap);border-radius:14px}
+
+      /* List fills viewport (minus header & bottom tabs) */
+      main.wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+      .list{max-height:none;height:calc(100dvh - 260px);border-radius:14px}
+
+      /* Card area scroll-friendly */
+      #cardPanel .bd{max-height:calc(100dvh - 220px);overflow:auto;-webkit-overflow-scrolling:touch}
+
+      /* MCQ buttons comfy */
+      .choices{gap:10px}
+      .choiceBtn{min-height:var(--tap);border-radius:14px;white-space:normal;line-height:1.25}
+
+      /* Top controls wrap nicely */
+      .row{gap:8px}
+      .row > *{flex:1 1 48%}
+      .row .tight{flex:1 1 auto}
+
       .mobile-nav{display:flex}
     }
 
@@ -150,6 +169,8 @@
         <button class="btn secondary" id="showAns">👁 显示答案<br/>ดูคำตอบ</button>
         <button class="btn secondary" id="mcqMode">🅰🅱 选择题<br/>ตัวเลือก</button>
         <button class="btn" id="playZh">▶ 播放中文<br/>เล่นภาษาจีน</button>
+        <button class="btn" id="prevQ">◀ 上一题<br/>ก่อนหน้า</button>
+        <button class="btn" id="nextQ">下一题 ▶<br/>ถัดไป</button>
         <button class="btn" id="mark">✓ 标记熟悉</button>
         <button class="btn danger" id="reset">重置熟悉</button>
       </div>
@@ -202,7 +223,7 @@
   <div class="mobile-nav" id="mobileNav">
     <div class="seg">
       <button class="btn" id="tabList">📋 列表<br/>รายการ</button>
-      <button class="btn active" id="tabPractice">🎧 练习<br/>ฝึก</button>
+      <button class="btn" id="tabPractice">🎧 练习<br/>ฝึก</button>
     </div>
   </div>
 </main>
@@ -229,8 +250,10 @@ function applyMobileTabs() {
     return;
   }
 
-  nav.style.display = "flex";
+  // Default to practice tab on mobile
   if (!window.__tab) window.__tab = "practice";
+
+  nav.style.display = "flex";
   listPanel.style.display = (window.__tab === "list") ? "" : "none";
   cardPanel.style.display = (window.__tab === "practice") ? "" : "none";
 
@@ -274,8 +297,8 @@ function parseCSV(text){
       continue;
     }
 
-    if (!inQ && (ch === '\n' || ch === '\r')) {
-      if (ch === '\r' && text[i + 1] === '\n') i++;
+    if (!inQ && (ch === '' || ch === '')) {
+      if (ch === '' && text[i + 1] === '') i++;
       row.push(cur.trim());
       cur = "";
       if (row.some(x => x !== "")) rows.push(row);
@@ -644,6 +667,7 @@ function next(){
     currentChoices = null;
     renderList();
     renderQuizCard();
+    if (mcqEnabled) buildChoices();
   } else {
     activeIdx = (activeIdx + 1) % VIEW.length;
     renderList();
@@ -662,6 +686,7 @@ function prev(){
     currentChoices = null;
     renderList();
     renderQuizCard();
+    if (mcqEnabled) buildChoices();
   } else {
     activeIdx = (activeIdx - 1 + VIEW.length) % VIEW.length;
     renderList();
@@ -737,6 +762,19 @@ qEl.addEventListener("input", applyFilter);
 
 el("next").addEventListener("click", next);
 el("prev").addEventListener("click", prev);
+
+// Card navigation (mobile-friendly)
+el("prevQ").addEventListener("click", async () => {
+  prev();
+  if (quizMode) await playThai();
+  else await playChinese();
+});
+
+el("nextQ").addEventListener("click", async () => {
+  next();
+  if (quizMode) await playThai();
+  else await playChinese();
+});
 
 el("shuffle").addEventListener("click", () => {
   // shuffle only in normal mode
@@ -844,4 +882,3 @@ el("clearWrong").addEventListener("click", clearWrong);
 </script>
 </body>
 </html>
-
