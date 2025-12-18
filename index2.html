@@ -1,494 +1,196 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>中文常用语 100 句｜点读课件 (TH→ZH)</title>
-  <style>
-    :root{
-      --bg:#0b1220; --card:#0f1a30; --muted:#94a3b8; --text:#e5e7eb;
-      --accent:#22c55e; --accent2:#60a5fa; --danger:#fb7185;
-      --border:rgba(148,163,184,.18);
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans Thai","Noto Sans",sans-serif;background:linear-gradient(180deg,#050915 0%,#0b1220 100%);color:var(--text)}
-    header{position:sticky;top:0;z-index:50;background:rgba(11,18,32,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
-    .wrap{max-width:1100px;margin:0 auto;padding:16px}
-    .top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    h1{font-size:18px;margin:0}
-    .pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
-    @media(min-width:900px){.grid{grid-template-columns:380px 1fr}}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>中文常用语 100 句｜点读课件</title>
 
-    .panel{background:rgba(15,26,48,.7);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-    .panel .hd{padding:12px 12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .panel .bd{padding:12px}
+<style>
+:root{
+  --bg:#0b1220; --card:#0f1a30; --muted:#94a3b8; --text:#e5e7eb;
+  --accent:#22c55e; --accent2:#60a5fa; --danger:#fb7185;
+  --border:rgba(148,163,184,.18);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans Thai","Noto Sans",sans-serif;
+  background:linear-gradient(180deg,#050915 0%,#0b1220 100%);
+  color:var(--text)
+}
+header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(11,18,32,.85);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border)
+}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+.top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:18px;margin:0}
+.pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px}
 
-    input[type="text"]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#081022;color:var(--text);outline:none}
-    input[type="text"]::placeholder{color:#64748b}
+.grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
+@media(min-width:900px){.grid{grid-template-columns:380px 1fr}}
 
-    .btn{cursor:pointer;border:1px solid var(--border);background:#0a1327;color:var(--text);padding:9px 12px;border-radius:10px;font-weight:600;font-size:13px}
-    .btn:hover{border-color:rgba(148,163,184,.4)}
-    .btn.primary{background:linear-gradient(90deg,#16a34a,#22c55e);border:none;color:#04110a}
-    .btn.secondary{background:linear-gradient(90deg,#2563eb,#60a5fa);border:none;color:#071225}
-    .btn.danger{background:linear-gradient(90deg,#e11d48,#fb7185);border:none;color:#18040a}
+.panel{background:rgba(15,26,48,.7);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.panel .hd{padding:12px;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap}
+.panel .bd{padding:12px}
 
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .row > *{flex:1}
-    .row .tight{flex:0 0 auto}
+.btn{
+  cursor:pointer;border:1px solid var(--border);
+  background:#0a1327;color:var(--text);
+  padding:9px 12px;border-radius:10px;font-weight:600;font-size:13px
+}
+.btn.primary{background:linear-gradient(90deg,#16a34a,#22c55e);border:none;color:#04110a}
+.btn.secondary{background:linear-gradient(90deg,#2563eb,#60a5fa);border:none;color:#071225}
 
-    .list{max-height:62vh;overflow:auto}
-    .item{padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:flex-start}
-    .item:hover{background:rgba(96,165,250,.08)}
-    .item.active{background:rgba(34,197,94,.12)}
-    .idx{color:var(--muted);font-variant-numeric:tabular-nums;min-width:38px}
-    .th{font-size:15px;line-height:1.4}
-    .zh{font-size:14px;color:#c7d2fe;margin-top:3px}
+input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#081022;color:#fff}
 
-    .card{padding:14px;border-radius:14px;background:rgba(15,26,48,.7);border:1px solid var(--border)}
-    .bigTH{font-size:22px;font-weight:800;letter-spacing:.2px}
-    .bigZH{margin-top:10px;font-size:20px;font-weight:800}
-    .bigPY{margin-top:6px;color:var(--accent2);font-size:15px}
-    .meta{margin-top:10px;color:var(--muted);font-size:12px;display:flex;gap:10px;flex-wrap:wrap}
+.list{max-height:62vh;overflow:auto}
+.item{padding:10px;border-bottom:1px solid var(--border);cursor:pointer}
+.item:hover{background:rgba(96,165,250,.08)}
+.item.active{background:rgba(34,197,94,.12)}
+.th{font-size:16px}
+.zh{font-size:13px;color:#c7d2fe;margin-top:4px}
 
-    .progress{height:10px;background:#071022;border-radius:999px;border:1px solid var(--border);overflow:hidden}
-    .bar{height:100%;background:linear-gradient(90deg,#16a34a,#22c55e);width:0%}
-
-    .toggle{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:12px}
-    .toggle input{transform:scale(1.1)}
-
-    .note{color:var(--muted);font-size:12px;line-height:1.5}
-    code{background:#071022;padding:2px 6px;border-radius:8px;border:1px solid var(--border)}
-  </style>
+.card{padding:14px;border-radius:14px;background:rgba(15,26,48,.7);border:1px solid var(--border)}
+.bigTH{font-size:22px;font-weight:800}
+.bigZH{font-size:20px;margin-top:8px}
+.bigPY{font-size:14px;color:var(--accent2);margin-top:6px}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+</style>
 </head>
+
 <body>
 <header>
-  <div class="wrap">
-    <div class="top">
-      <h1>中文常用语 100 句｜点读课件</h1>
-      <span class="pill">点击词条播放 · TH → ZH<br/>คลิกเพื่อฟังเสียง</span>
-      <span class="pill" id="status">未加载</span>
-    </div>
+  <div class="wrap top">
+    <h1>中文常用语 100 句<br>
+      <span style="font-size:13px;color:#94a3b8">บทเรียนภาษาจีน 100 ประโยค</span>
+    </h1>
+    <span class="pill">点击播放 · คลิกเพื่อฟังเสียง</span>
+    <span class="pill" id="status">加载中…</span>
   </div>
 </header>
 
-<main class="wrap">
-  <div class="grid">
+<main class="wrap grid">
 
-    <!-- 左侧：列表 -->
-    <section class="panel">
-      <div class="hd">
-        <input id="q" type="text" placeholder="搜索：泰语 / 中文 / 拼音…" />
-        <button class="btn tight" id="clear">清空</button>
-      </div>
-      <div class="bd">
-        <div class="row" style="margin-bottom:10px"><button class="btn" id="quiz">🎧 听音选句<br/>แบบฝึกหัดฟังเสียง</button>
-          <button class="btn secondary" id="shuffle">随机</button>
-          <button class="btn" id="prev">上一条</button>
-          <button class="btn" id="next">下一条</button>
-        </div>
-        <div class="progress" title="学习进度（已标记熟悉）"><div class="bar" id="bar"></div></div>
-        <div class="meta" style="margin:10px 0 0">
-          <span id="count">0 条</span>
-          <span id="knownCount">已熟悉 0</span>
-          <span class="toggle"><input type="checkbox" id="auto" /> 自动下一条</span>
-          <span class="toggle"><input type="checkbox" id="loop" /> 循环播放</span>
-        </div>
-      </div>
-      <div class="list" id="list"></div>
-    </section>
-
-    <!-- 右侧：大卡片 -->
-    <section class="panel">
-      <div class="hd">
-        <button class="btn primary" id="play">▶ 播放</button>
-        <button class="btn" id="replay">⟲ 重播</button>
-        <button class="btn" id="mark">✓ 标记熟悉</button>
-        <button class="btn danger" id="reset">重置熟悉</button>
-      </div>
-      <div class="bd">
-        <div class="card">
-          <div class="bigTH" id="bigTH">—</div>
-          <div class="bigZH" id="bigZH">—</div>
-          <div class="bigPY" id="bigPY">—</div>
-          <div class="meta">
-            <span>音频 key：<code id="key">—</code></span>
-            <span>文件：<code id="file">—</code></span>
-          </div>
-        </div>
-
-        <div style="height:12px"></div>
-        <div class="note"><b>学习模式说明 / คำอธิบายโหมดการเรียน:</b><br/>• 普通模式：点击句子听音学习<br/>• 听音选句：先听声音，再选择正确的句子<br/><br/>
-          <b>放到 Google Drive 的最稳方式：</b><br/>
-          1) 新建文件夹，例如 <code>lesson100</code><br/>
-          2) 放入本文件 <code>index.html</code>，再建子文件夹 <code>audio/</code> 放 <code>zh_cn_0001.mp3 ... zh_cn_0100.mp3</code><br/>
-          3) 同目录放一个 <code>phrases.csv</code>（推荐）或直接用内置 100 句数据<br/>
-          <br/>
-          <b>CSV 格式（推荐 3 列）：</b> <code>Thai,Chinese_Pinyin,TTS_Key</code><br/>
-          例如：<code>สวัสดี,你好 nǐ hǎo,zh_cn_0001</code><br/>
-          <br/>
-          本课件优先读取 <code>phrases.csv</code>（你更新 CSV 就能更新课件）；读取失败则使用内置示例数据。
-        </div>
-      </div>
-    </section>
-
+<!-- 左侧 -->
+<section class="panel">
+  <div class="hd">
+    <button class="btn" id="quiz">🎧 听音选句</button>
+    <button class="btn secondary" id="shuffle">随机</button>
   </div>
+  <div class="list" id="list"></div>
+</section>
+
+<!-- 右侧 -->
+<section class="panel">
+  <div class="hd">
+    <button class="btn primary" id="play">▶ 播放</button>
+  </div>
+  <div class="bd">
+    <div class="card">
+      <div class="bigTH" id="bigTH">—</div>
+      <div class="bigZH" id="bigZH">—</div>
+      <div class="bigPY" id="bigPY">—</div>
+    </div>
+    <div class="note" style="margin-top:12px">
+      普通模式：点句子听音<br>
+      听音选句：先听，再选正确句
+    </div>
+  </div>
+</section>
+
 </main>
 
-<audio id="audio" preload="auto"></audio>
+<audio id="audio"></audio>
 
 <script>
-  // =========================
-  // 1) 内置数据（兜底用）
-  //    如果你同目录放了 phrases.csv，会优先读取 CSV
-  // =========================
-  const BUILTIN = [
-    ["สวัสดี","你好 nǐ hǎo","zh_cn_0001"],
-    ["สบายดีไหม","你好吗 nǐ hǎo ma","zh_cn_0002"],
-    ["สวัสดีตอนเช้า","早上好 zǎo shang hǎo","zh_cn_0003"],
-    ["สวัสดีตอนเย็น","晚上好 wǎn shang hǎo","zh_cn_0004"],
-    ["ลาก่อน","再见 zài jiàn","zh_cn_0005"],
-    ["ขอบคุณ","谢谢 xiè xie","zh_cn_0006"],
-    ["ขอบคุณมาก","非常感谢 fēi cháng gǎn xiè","zh_cn_0007"],
-    ["ไม่เป็นไร","不客气 bú kè qi","zh_cn_0008"],
-    ["ขอโทษ","对不起 duì bù qǐ","zh_cn_0009"],
-    ["ไม่เป็นไร","没关系 méi guān xi","zh_cn_0010"],
+const listEl = document.getElementById("list");
+const audio = document.getElementById("audio");
 
-    ["ใช่","是的 shì de","zh_cn_0011"],
-    ["ไม่ใช่","不是 bú shì","zh_cn_0012"],
-    ["ได้","可以 kě yǐ","zh_cn_0013"],
-    ["ไม่ได้","不可以 bù kě yǐ","zh_cn_0014"],
-    ["ตกลง","好 hǎo","zh_cn_0015"],
-    ["โอเค","好的 hǎo de","zh_cn_0016"],
+let DATA = [];
+let activeIdx = 0;
+let quizMode = false;
+let quizAnswerKey = null;
+let quizOptions = [];
 
-    ["ฉันไม่เข้าใจ","我不懂 wǒ bù dǒng","zh_cn_0017"],
-    ["ฉันเข้าใจแล้ว","我懂了 wǒ dǒng le","zh_cn_0018"],
-    ["พูดอีกครั้งได้ไหม","请再说一遍 qǐng zài shuō yí biàn","zh_cn_0019"],
-    ["พูดช้าๆหน่อย","请说慢一点 qǐng shuō màn yì diǎn","zh_cn_0020"],
-    ["พูดภาษาไทยได้ไหม","你会说泰语吗 nǐ huì shuō tài yǔ ma","zh_cn_0021"],
-    ["ฉันพูดภาษาจีนไม่ได้","我不会说中文 wǒ bú huì shuō zhōng wén","zh_cn_0022"],
-
-    ["คุณชื่ออะไร","你叫什么名字 nǐ jiào shén me míng zì","zh_cn_0023"],
-    ["ฉันชื่อ…","我叫…… wǒ jiào","zh_cn_0024"],
-    ["ยินดีที่ได้รู้จัก","很高兴认识你 hěn gāo xìng rèn shi nǐ","zh_cn_0025"],
-    ["คุณมาจากไหน","你从哪里来 nǐ cóng nǎ lǐ lái","zh_cn_0026"],
-    ["ฉันมาจากประเทศไทย","我来自泰国 wǒ lái zì tài guó","zh_cn_0027"],
-    ["คุณอายุเท่าไหร่","你多大了 nǐ duō dà le","zh_cn_0028"],
-
-    ["วันนี้","今天 jīn tiān","zh_cn_0029"],
-    ["พรุ่งนี้","明天 míng tiān","zh_cn_0030"],
-    ["เมื่อวาน","昨天 zuó tiān","zh_cn_0031"],
-    ["ตอนนี้","现在 xiàn zài","zh_cn_0032"],
-    ["กี่โมงแล้ว","现在几点 xiàn zài jǐ diǎn","zh_cn_0033"],
-
-    ["ราคาเท่าไหร่","多少钱 duō shǎo qián","zh_cn_0034"],
-    ["แพงไป","太贵了 tài guì le","zh_cn_0035"],
-    ["ถูกมาก","很便宜 hěn pián yi","zh_cn_0036"],
-    ["ลดได้ไหม","可以便宜一点吗 kě yǐ pián yi yì diǎn ma","zh_cn_0037"],
-    ["ฉันอยากซื้อ","我要买 wǒ yào mǎi","zh_cn_0038"],
-    ["ฉันไม่อยากซื้อ","我不要 wǒ bú yào","zh_cn_0039"],
-
-    ["ฉันหิว","我饿了 wǒ è le","zh_cn_0040"],
-    ["ฉันอิ่มแล้ว","我饱了 wǒ bǎo le","zh_cn_0041"],
-    ["ฉันอยากกินข้าว","我想吃饭 wǒ xiǎng chī fàn","zh_cn_0042"],
-    ["ขอเมนูหน่อย","请给我菜单 qǐng gěi wǒ cài dān","zh_cn_0043"],
-    ["อร่อยมาก","很好吃 hěn hǎo chī","zh_cn_0044"],
-    ["ไม่อร่อย","不好吃 bù hǎo chī","zh_cn_0045"],
-
-    ["ไปทางไหน","怎么走 zěn me zǒu","zh_cn_0046"],
-    ["เลี้ยวซ้าย","左转 zuǒ zhuǎn","zh_cn_0047"],
-    ["เลี้ยวขวา","右转 yòu zhuǎn","zh_cn_0048"],
-    ["เดินตรงไป","一直走 yì zhí zǒu","zh_cn_0049"],
-    ["ถึงแล้ว","到了 dào le","zh_cn_0050"],
-
-    // 你放 phrases.csv 后，内置数据不会影响；这里只做示例兜底。
-  ];
-
-  // =========================
-  // 2) 读取 CSV（同目录 phrases.csv）
-  //    格式：Thai,Chinese_Pinyin,TTS_Key
-  // =========================
-  async function loadCSV() {
-    const res = await fetch("phrases.csv", { cache: "no-store" });
-    if (!res.ok) throw new Error("phrases.csv not found");
-    const text = await res.text();
-    const rows = parseCSV(text);
-
-    // 去掉表头（如果第一行含 Thai / Chinese 等）
-    const cleaned = rows.filter(r => r.join(" ").trim().length);
-    const head = cleaned[0]?.map(x => (x||"").toLowerCase()) || [];
-    const hasHeader = head.includes("thai") || head.includes("chinese_pinyin") || head.includes("tts_key");
-    const dataRows = hasHeader ? cleaned.slice(1) : cleaned;
-
-    const out = [];
-    for (let i = 0; i < dataRows.length; i++) {
-      const r = dataRows[i];
-      const thai = (r[0] || "").trim();
-      const zhpy = (r[1] || "").trim();
-      const key = (r[2] || "").trim() || `zh_cn_${String(i+1).padStart(4, "0")}`;
-      if (!thai || !zhpy) continue;
-      out.push([thai, zhpy, key]);
-    }
-    return out;
+function shuffleArray(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
   }
+  return a;
+}
 
-  // 轻量 CSV parser（支持引号/逗号）
-  function parseCSV(csv) {
-    const lines = csv.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
-    const rows = [];
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      const row = [];
-      let cur = "";
-      let inQ = false;
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === '"') {
-          if (inQ && line[i+1] === '"') { cur += '"'; i++; }
-          else inQ = !inQ;
-        } else if (ch === ',' && !inQ) {
-          row.push(cur); cur = "";
-        } else {
-          cur += ch;
-        }
+async function loadCSV(){
+  const res = await fetch("phrases.csv");
+  const text = await res.text();
+  const rows = text.trim().split("\n").slice(1);
+  DATA = rows.map(r=>{
+    const [th,zh,key]=r.split(",");
+    return [th,zh,key];
+  });
+  renderList();
+  select(0);
+  document.getElementById("status").textContent=`已加载 ${DATA.length} 条`;
+}
+
+function renderList(){
+  listEl.innerHTML="";
+  const src = quizMode ? quizOptions : DATA;
+
+  src.forEach(item=>{
+    const div=document.createElement("div");
+    div.className="item";
+    div.innerHTML=`<div class="th">${item[0]}</div><div class="zh">${item[1]}</div>`;
+    div.onclick=()=>{
+      if(quizMode){
+        alert(item[2]===quizAnswerKey?"✅ 正确":"❌ 错误");
+        quizMode=false;
+        renderList();
+        const idx=DATA.findIndex(x=>x[2]===quizAnswerKey);
+        select(idx);
+      }else{
+        select(DATA.findIndex(x=>x[2]===item[2]));
       }
-      row.push(cur);
-      rows.push(row.map(s => (s||"").trim()));
-    }
-    return rows;
-  }
-
-  // =========================
-  // 3) UI 逻辑
-  // =========================
-  const el = (id) => document.getElementById(id);
-  const listEl = el("list");
-  const qEl = el("q");
-  const statusEl = el("status");
-
-  const bigTH = el("bigTH");
-  const bigZH = el("bigZH");
-  const bigPY = el("bigPY");
-  const keyEl = el("key");
-  const fileEl = el("file");
-  const barEl = el("bar");
-  const countEl = el("count");
-  const knownCountEl = el("knownCount");
-
-  const audio = el("audio");
-  const autoNext = el("auto");
-  let quizMode = false;
-  let quizAnswer = null;
-  const loopPlay = el("loop");
-
-  let DATA = [];
-  let VIEW = [];
-  let activeIdx = 0;
-
-  const KNOWN_KEY = "lesson100_known_v1";
-  const known = new Set(JSON.parse(localStorage.getItem(KNOWN_KEY) || "[]"));
-
-  function splitZhPy(zhpy) {
-    // 规则：中文在前，拼音在后（中间至少一个空格）
-    // 若没有空格，就当作全中文
-    const m = zhpy.match(/^(.*?)(\s+[a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ\s]+.*)$/);
-    if (!m) return { zh: zhpy, py: "" };
-    return { zh: m[1].trim(), py: m[2].trim() };
-  }
-
-  function audioPath(key) {
-    return `audio/${key}.mp3`; // 你如果用 wav/aac，改这里
-  }
-
-  function renderList() {
-    listEl.innerHTML = "";
-    const quizOptions = quizMode && quizAnswer ? shuffleArray(VIEW.slice()).slice(0,4).map(x=>x[2]).includes(quizAnswer[2]) ? shuffleArray(VIEW.slice()).slice(0,4) : shuffleArray(VIEW.slice()).slice(0,3).concat([quizAnswer]) : null;
-    listEl.innerHTML = "";
-    VIEW.forEach((it, i) => {
-      const [thai, zhpy, key] = it;
-      if (quizMode && quizOptions && !quizOptions.find(x=>x[2]===key)) return;
-      const div = document.createElement("div");
-      div.className = "item" + (i === activeIdx ? " active" : "");
-      div.dataset.i = String(i);
-
-      const idx = document.createElement("div");
-      idx.className = "idx";
-      idx.textContent = String(i + 1).padStart(3, "0");
-
-      const body = document.createElement("div");
-      const th = document.createElement("div");
-      th.className = "th";
-      th.textContent = thai + (known.has(key) ? "  ✓" : "");
-      const zh = document.createElement("div");
-      zh.className = "zh";
-      zh.textContent = zhpy;
-
-      body.appendChild(th);
-      body.appendChild(zh);
-
-      div.appendChild(idx);
-      div.appendChild(body);
-      div.addEventListener("click", () => {
-        if(quizMode){
-          if(key===quizAnswer[2]){
-            alert('✅ 正确 / ถูกต้อง');
-          }else{
-            alert('❌ 错误 / ไม่ถูกต้อง');
-          }
-          quizMode=false;
-          applyFilter();
-        }else{
-          select(i, true);
-        }
-      });
-      listEl.appendChild(div);
-    });
-
-    countEl.textContent = `${VIEW.length} 条`;
-    updateProgress();
-  }
-
-  function updateProgress() {
-    const total = VIEW.length || 1;
-    const knownCount = VIEW.filter(([, , key]) => known.has(key)).length;
-    knownCountEl.textContent = `已熟悉 ${knownCount}`;
-    barEl.style.width = `${Math.round((knownCount / total) * 100)}%`;
-  }
-
-  function select(i, scrollIntoView) {
-    if (i < 0 || i >= VIEW.length) return;
-    activeIdx = i;
-
-    // update highlight
-    [...listEl.querySelectorAll(".item")].forEach((node, idx) => {
-      node.classList.toggle("active", idx === activeIdx);
-    });
-
-    const [thai, zhpy, key] = VIEW[activeIdx];
-    const { zh, py } = splitZhPy(zhpy);
-    bigTH.textContent = thai;
-    bigZH.textContent = zh;
-    bigPY.textContent = py;
-    keyEl.textContent = key;
-    fileEl.textContent = audioPath(key);
-
-    if (scrollIntoView) {
-      const node = listEl.querySelector(`.item[data-i="${activeIdx}"]`);
-      node?.scrollIntoView({ block: "nearest" });
-    }
-  }
-
-  async function playByKey(key){
-    audio.loop = false;
-    audio.src = audioPath(key);
-    await audio.play();
-  }
-
-  async function playCurrent() {
-    const [, , key] = VIEW[activeIdx] || [];
-    if (!key) return;
-    audio.loop = loopPlay.checked;
-    audio.src = audioPath(key);
-    try {
-      await audio.play();
-    } catch (e) {
-      alert("无法播放音频。请确认：1) audio/ 下存在对应 mp3；2) 手机浏览器需要先点一次播放按钮解锁音频。");
-    }
-  }
-
-  function next() {
-    if (!VIEW.length) return;
-    select((activeIdx + 1) % VIEW.length, true);
-  }
-  function prev() {
-    if (!VIEW.length) return;
-    select((activeIdx - 1 + VIEW.length) % VIEW.length, true);
-  }
-
-  function shuffle() {
-    if (!VIEW.length) return;
-    const curKey = VIEW[activeIdx]?.[2];
-    VIEW = VIEW.slice().sort(() => Math.random() - 0.5);
-    renderList();
-    const newIdx = VIEW.findIndex((x) => x[2] === curKey);
-    select(newIdx >= 0 ? newIdx : 0, true);
-  }
-
-  function applyFilter() {
-    const q = (qEl.value || "").trim().toLowerCase();
-    if (!q) {
-      VIEW = DATA.slice();
-    } else {
-      VIEW = DATA.filter(([thai, zhpy, key]) =>
-        thai.toLowerCase().includes(q) ||
-        zhpy.toLowerCase().includes(q) ||
-        key.toLowerCase().includes(q)
-      );
-    }
-    activeIdx = 0;
-    renderList();
-    select(0, false);
-  }
-
-  function markKnown() {
-    const [, , key] = VIEW[activeIdx] || [];
-    if (!key) return;
-    if (known.has(key)) known.delete(key); else known.add(key);
-    localStorage.setItem(KNOWN_KEY, JSON.stringify([...known]));
-    renderList();
-    select(activeIdx, false);
-  }
-
-  function resetKnown() {
-    if (!confirm("确定要清空所有“已熟悉”标记吗？")) return;
-    known.clear();
-    localStorage.setItem(KNOWN_KEY, "[]");
-    renderList();
-    select(activeIdx, false);
-  }
-
-  // 自动下一条：播放结束后跳到下一条并播放
-  audio.addEventListener("ended", async () => {
-    if (!autoNext.checked) return;
-    next();
-    // 手机上需要用户手势解锁：第一次请手动点“播放”
-    await playCurrent();
+    };
+    listEl.appendChild(div);
   });
+}
 
-  // 绑定按钮
-  el("play").addEventListener("click", () => playCurrent());
-  el("replay").addEventListener("click", () => playCurrent());
-  el("next").addEventListener("click", () => next());
-  el("prev").addEventListener("click", () => prev());
-  el("quiz").addEventListener("click", async () => {
-    quizMode = true;
-    quizAnswer = VIEW[Math.floor(Math.random()*VIEW.length)];
-    await playByKey(quizAnswer[2]);
-    renderList();
-  });
+function select(i){
+  activeIdx=i;
+  const [th,zh,key]=DATA[i];
+  document.getElementById("bigTH").textContent=th;
+  document.getElementById("bigZH").textContent=zh.split(" ")[0];
+  document.getElementById("bigPY").textContent=zh.split(" ").slice(1).join(" ");
+}
 
-  el("shuffle").addEventListener("click", () => shuffle());
-  el("mark").addEventListener("click", () => markKnown());
-  el("reset").addEventListener("click", () => resetKnown());
-  el("clear").addEventListener("click", () => { qEl.value = ""; applyFilter(); });
-  qEl.addEventListener("input", () => applyFilter());
+document.getElementById("play").onclick=()=>{
+  audio.src=`audio/${DATA[activeIdx][2]}.mp3`;
+  audio.play();
+};
 
-  // 初始化加载：优先 phrases.csv
-  (async function init(){
-    try {
-      statusEl.textContent = "加载中…";
-      const csvData = await loadCSV();
-      DATA = csvData.length ? csvData : BUILTIN;
-      statusEl.textContent = csvData.length ? "已加载：phrases.csv" : "已加载：内置数据";
-    } catch (e) {
-      DATA = BUILTIN;
-      statusEl.textContent = "已加载：内置数据";
-    }
+document.getElementById("quiz").onclick=()=>{
+  quizMode=true;
+  const ans=DATA[Math.floor(Math.random()*DATA.length)];
+  quizAnswerKey=ans[2];
+  const others=shuffleArray(DATA.filter(x=>x[2]!==quizAnswerKey)).slice(0,3);
+  quizOptions=shuffleArray([...others,ans]);
+  audio.src=`audio/${quizAnswerKey}.mp3`;
+  audio.play();
+  renderList();
+};
 
-    VIEW = DATA.slice();
-    renderList();
-    select(0, false);
-  })();
+document.getElementById("shuffle").onclick=()=>{
+  DATA=shuffleArray(DATA);
+  renderList();
+  select(0);
+};
+
+loadCSV();
 </script>
 </body>
 </html>
