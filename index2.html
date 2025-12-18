@@ -613,9 +613,7 @@ async function safePlay(src){
     await audio.play();
     return true;
   } catch (e) {
-    alert("无法播放音频：" + src + "
-
-手机浏览器通常需要先手动点一次播放按钮解锁音频权限。" );
+    alert("无法播放音频：" + src + "手机浏览器通常需要先手动点一次播放按钮解锁音频权限。" );
     return false;
   }
 }
@@ -784,8 +782,7 @@ el("playZh").addEventListener("click", async () => {
 
 el("showAns").addEventListener("click", () => {
   if (!quizMode) return alert("请先进入测验模式（点击：听音问答）");
-  if (mcqEnabled) return alert("选择题已开启：请直接作答，答完会显示答案。
-如需手动显示答案，请先关闭‘选择题’。" );
+  if (mcqEnabled) return alert("选择题已开启：请直接作答，答完会显示答案。如需手动显示答案，请先关闭‘选择题’。" );
   const it = VIEW[quizIdx];
   if (!it) return;
   const sp = splitZhPy(it[1]);
