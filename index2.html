@@ -85,33 +85,41 @@
     .seg .active{background:linear-gradient(90deg,#2563eb,#60a5fa);border:none;color:#071225}
 
     @media(max-width:699px){
-      .wrap{padding:12px}
-      header .wrap{padding:10px 12px}
-      h1{font-size:16px;line-height:1.2}
-      .pill{font-size:11px}
+      .wrap{padding:6px}
+      header .wrap{padding:6px 6px}
+      h1{font-size:15px;line-height:1.2}
+      .pill{font-size:10px;padding:4px 7px}
 
-      .grid{gap:10px}
-      .panel{border-radius:16px}
-      .panel .hd{padding:10px;gap:8px}
-      .panel .bd{padding:10px}
+      .grid{gap:6px}
+      .panel{border-radius:10px}
+      .panel .hd{padding:6px;gap:4px}
+      .panel .bd{padding:6px}
 
-      .btn{min-height:var(--tap);border-radius:14px}
-      input[type="text"]{min-height:var(--tap);border-radius:14px}
+      .btn{min-height:32px;padding:6px 8px;font-size:12px;border-radius:10px}
+      .btn.primary, .btn.secondary, .btn.danger{font-size:12px;padding:6px 8px}
+      input[type="text"]{min-height:32px;padding:6px 8px;font-size:13px;border-radius:10px}
 
-      main.wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
-      .list{max-height:none;height:calc(100dvh - 260px);border-radius:14px}
-      #cardPanel .bd{max-height:calc(100dvh - 220px);overflow:auto;-webkit-overflow-scrolling:touch}
+      main.wrap{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
+      .list{max-height:none;height:calc(100dvh - 200px);border-radius:10px}
+      #cardPanel .bd{max-height:calc(100dvh - 160px);overflow:auto;-webkit-overflow-scrolling:touch}
 
-      .row{gap:8px}
+      .row{gap:4px}
       .row > *{flex:1 1 48%}
       .row .tight{flex:1 1 auto}
 
-      .mobile-nav{display:flex}
-    }
+      .mobile-nav{display:flex;padding:6px 6px 10px 6px}
+      .seg button{min-height:32px;font-size:13px}
 
-    @media(min-width:700px) and (max-width:1024px){
-      .grid{grid-template-columns:360px 1fr}
-      .list{max-height:70vh}
+      .card{padding:8px;border-radius:10px}
+      .bigTH{font-size:17px}
+      .bigZH{font-size:15px}
+      .bigPY{font-size:12px}
+      .meta{font-size:10px;gap:4px}
+      .note{font-size:11px}
+      .choices{gap:6px}
+      .choiceBtn{min-height:32px;font-size:13px;padding:6px 8px;border-radius:8px}
+      .progress{height:7px}
+      .bar{height:100%}
     }
   </style>
 </head>
