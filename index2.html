@@ -17,17 +17,10 @@
     .top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     h1{font-size:18px;margin:0}
     .pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px}
+
     .grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
-    /* Desktop */
     @media(min-width:900px){.grid{grid-template-columns:380px 1fr}}
 
-    /* Tablet (iPad portrait/landscape): give more room to content, reduce fixed list height */
-    @media(min-width:700px) and (max-width:899px){
-      .wrap{padding:14px}
-      .list{max-height:52vh}
-    }
-
-    /* Mobile: use a two-tab layout (List / Practice) */
     @media(max-width:699px){
       .wrap{padding:12px}
       header .wrap{padding:12px}
@@ -40,15 +33,14 @@
       .bigTH{font-size:20px}
       .bigZH{font-size:18px}
       .bigPY{font-size:14px}
-      .list{max-height:none;height:calc(100dvh - 210px);}
-      main.wrap{padding-bottom:76px} /* space for mobile nav */
+      .list{max-height:none;height:calc(100dvh - 220px)}
+      main.wrap{padding-bottom:76px}
       .mobile-nav{display:flex}
     }
 
     .mobile-nav{
       display:none;
-      position:fixed;
-      left:0;right:0;bottom:0;
+      position:fixed;left:0;right:0;bottom:0;
       padding:10px 12px;
       background:rgba(11,18,32,.92);
       backdrop-filter:blur(10px);
@@ -59,16 +51,6 @@
     .seg{flex:1;display:flex;gap:8px}
     .seg button{flex:1}
     .seg .active{background:linear-gradient(90deg,#2563eb,#60a5fa);border:none;color:#071225}
-
-    /* Make panel header buttons wrap nicer on small screens */
-    .panel .hd .btn{flex:0 0 auto}
-    @media(max-width:699px){
-      .panel .hd{gap:8px}
-      #q{min-width:0;flex:1 1 180px}
-      .row{gap:8px}
-      .row > *{flex:1 1 140px}
-      .row .tight{flex:0 0 auto}
-    }
 
     .panel{background:rgba(15,26,48,.7);border:1px solid var(--border);border-radius:14px;overflow:hidden}
     .panel .hd{padding:12px 12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -112,6 +94,10 @@
     .warn{color:#fbbf24}
 
     .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(8,16,34,.6);color:var(--muted);font-size:12px}
+
+    /* MCQ */
+    .choices{display:flex;flex-direction:column;gap:10px}
+    .choiceBtn{width:100%;text-align:left}
   </style>
 </head>
 <body>
@@ -122,7 +108,7 @@
         中文常用语 100 句｜点读课件（CSV版）
         <br/><span style="font-size:13px;color:#94a3b8">บทเรียนภาษาจีน 100 ประโยค (คลิกเพื่อฟังเสียง)</span>
       </h1>
-      <span class="pill">普通模式：点击列表播放中文｜测验：题目泰语+泰语音频，答案中文+拼音</span>
+      <span class="pill">普通：点列表播中文｜测验：题目=泰语+泰语音频；答案=中文+拼音（四选一）</span>
       <span class="pill" id="status">未加载</span>
     </div>
   </div>
@@ -132,7 +118,7 @@
   <div class="grid">
 
     <!-- 左侧：列表 -->
-    <section class="panel">
+    <section class="panel" id="listPanel">
       <div class="hd">
         <input id="q" type="text" placeholder="搜索：泰语 / 中文 / 拼音 / key …" />
         <button class="btn tight" id="clear">清空</button>
@@ -157,11 +143,12 @@
     </section>
 
     <!-- 右侧：卡片 -->
-    <section class="panel">
+    <section class="panel" id="cardPanel">
       <div class="hd">
         <button class="btn primary" id="playTh">▶ 播放泰语<br/>เล่นภาษาไทย</button>
         <button class="btn" id="replay">⟲ 重播</button>
         <button class="btn secondary" id="showAns">👁 显示答案<br/>ดูคำตอบ</button>
+        <button class="btn secondary" id="mcqMode">🅰🅱 选择题<br/>ตัวเลือก</button>
         <button class="btn" id="playZh">▶ 播放中文<br/>เล่นภาษาจีน</button>
         <button class="btn" id="mark">✓ 标记熟悉</button>
         <button class="btn danger" id="reset">重置熟悉</button>
@@ -174,13 +161,13 @@
           <div class="meta">
             <span>音频 key：<code id="key">—</code></span>
             <span>文件：<code id="file">—</code></span>
-            <span>错题：<code id="wrongStat">0</code></span>
+            <span>错题：<code id="wrongStat">0题/0次</code></span>
           </div>
         </div>
 
         <div style="height:12px"></div>
 
-        <!-- 选择题区域（仅测验模式显示） -->
+        <!-- ✅ 选择题（四选一）区域：只在测验模式显示 -->
         <div class="card" id="mcq" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
             <div style="font-weight:800">选择题（四选一）<span style="font-weight:600;color:#94a3b8">｜คำถามแบบเลือกตอบ</span></div>
@@ -190,24 +177,33 @@
             </div>
           </div>
           <div style="height:10px"></div>
-          <div id="choices" class="row" style="flex-direction:column;align-items:stretch"></div>
+          <div id="choices" class="choices"></div>
           <div style="height:10px"></div>
           <div class="note" id="mcqHint">点击选项作答。答完会显示正误；可点“播放中文”听正确答案。</div>
         </div>
 
         <div style="height:12px"></div>
+
         <div class="note">
           <b>文件结构（同一文件夹）:</b><br/>
           <code>index.html</code>（本文件）<br/>
           <code>phrases.csv</code>（3列：Thai,Chinese_Pinyin,TTS_Key）<br/>
-          <code>audio/</code>（中文音频 / เสียงภาษาจีน）<code>&lt;key&gt;.mp3</code>（例如 <code>audio/zh_cn_0001.mp3</code>）<br/>
-          <code>audio_th/</code>（泰语音频 / เสียงภาษาไทย）<code>th_0001.mp3</code>（例如 <code>audio_th/th_0001.mp3</code>）<br/>
+          <code>audio/</code>（中文音频）<code>&lt;key&gt;.mp3</code>（例 <code>audio/zh_cn_0001.mp3</code>）<br/>
+          <code>audio_th/</code>（泰语音频）<code>th_0001.mp3</code>（例 <code>audio_th/th_0001.mp3</code>）<br/>
           <br/>
           <b class="warn">注意：</b>手机浏览器通常需要先点一次播放按钮解锁音频权限。
         </div>
       </div>
     </section>
 
+  </div>
+
+  <!-- Mobile bottom nav -->
+  <div class="mobile-nav" id="mobileNav">
+    <div class="seg">
+      <button class="btn" id="tabList">📋 列表<br/>รายการ</button>
+      <button class="btn active" id="tabPractice">🎧 练习<br/>ฝึก</button>
+    </div>
   </div>
 </main>
 
@@ -216,9 +212,141 @@
 <script>
 "use strict";
 
+// ------------------------------
+// Mobile tabs
+// ------------------------------
+function applyMobileTabs() {
+  const isMobile = window.matchMedia("(max-width:699px)").matches;
+  const listPanel = document.getElementById("listPanel");
+  const cardPanel = document.getElementById("cardPanel");
+  const nav = document.getElementById("mobileNav");
+  if (!listPanel || !cardPanel || !nav) return;
+
+  if (!isMobile) {
+    nav.style.display = "none";
+    listPanel.style.display = "";
+    cardPanel.style.display = "";
+    return;
+  }
+
+  nav.style.display = "flex";
+  if (!window.__tab) window.__tab = "practice";
+  listPanel.style.display = (window.__tab === "list") ? "" : "none";
+  cardPanel.style.display = (window.__tab === "practice") ? "" : "none";
+
+  const tabList = document.getElementById("tabList");
+  const tabPractice = document.getElementById("tabPractice");
+  if (tabList && tabPractice) {
+    tabList.classList.toggle("active", window.__tab === "list");
+    tabPractice.classList.toggle("active", window.__tab === "practice");
+  }
+}
+window.addEventListener("resize", applyMobileTabs);
+document.addEventListener("click", (e) => {
+  const id = e.target && e.target.id ? e.target.id : "";
+  if (id === "tabList") { window.__tab = "list"; applyMobileTabs(); }
+  if (id === "tabPractice") { window.__tab = "practice"; applyMobileTabs(); }
+});
+
+// ------------------------------
+// Helpers
+// ------------------------------
 const el = (id) => document.getElementById(id);
 
-// --- DOM ---
+function parseCSV(text){
+  const rows = [];
+  let row = [];
+  let cur = "";
+  let inQ = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (ch === '"') {
+      if (inQ && text[i + 1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+      continue;
+    }
+
+    if (!inQ && ch === ',') {
+      row.push(cur.trim());
+      cur = "";
+      continue;
+    }
+
+    if (!inQ && (ch === '
+' || ch === '
+')) {
+      if (ch === '
+' && text[i + 1] === '
+') i++;
+      row.push(cur.trim());
+      cur = "";
+      if (row.some(x => x !== "")) rows.push(row);
+      row = [];
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  row.push(cur.trim());
+  if (row.some(x => x !== "")) rows.push(row);
+  return rows;
+}
+
+async function loadCSV(){
+  const res = await fetch("phrases.csv", { cache: "no-store" });
+  if (!res.ok) throw new Error("phrases.csv not found");
+  const text = await res.text();
+  let rows = parseCSV(text);
+
+  const head = (rows[0] || []).map(x => (x || "").toLowerCase());
+  const hasHeader = head.includes("thai") || head.includes("chinese_pinyin") || head.includes("tts_key");
+  if (hasHeader) rows = rows.slice(1);
+
+  const out = [];
+  for (const r of rows) {
+    const thai = (r[0] || "").trim();
+    const zhpy = (r[1] || "").trim();
+    const key  = (r[2] || "").trim();
+    if (!thai || !zhpy || !key) continue;
+    out.push([thai, zhpy, key]);
+  }
+  return out;
+}
+
+function splitZhPy(zhpy){
+  const s = String(zhpy || "").trim();
+  const p = s.lastIndexOf(" ");
+  if (p <= 0) return { zh: s, py: "" };
+  const zh = s.slice(0, p).trim();
+  const py = s.slice(p + 1).trim();
+  if (py.length < 2) return { zh: s, py: "" };
+  return { zh, py };
+}
+
+function zhAudioPath(key){ return "audio/" + key + ".mp3"; }
+function thAudioPath(key){
+  const parts = String(key).split("_");
+  let num = parts[parts.length - 1] || "0001";
+  num = String(num).padStart(4, "0");
+  return "audio_th/th_" + num + ".mp3";
+}
+
+function shuffle(arr){
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = arr[i];
+    arr[i] = arr[j];
+    arr[j] = t;
+  }
+  return arr;
+}
+
+// ------------------------------
+// DOM refs
+// ------------------------------
 const listEl = el("list");
 const qEl = el("q");
 const statusEl = el("status");
@@ -243,9 +371,11 @@ const audio = el("audio");
 const autoNext = el("auto");
 const loopPlay = el("loop");
 
-// --- State ---
-let DATA = [];      // original CSV order
-let VIEW = [];      // filtered (keeps CSV order)
+// ------------------------------
+// State
+// ------------------------------
+let DATA = [];
+let VIEW = [];
 let activeIdx = 0;
 
 let quizMode = false;
@@ -253,7 +383,7 @@ let quizIdx = 0;
 
 let mcqEnabled = true; // ✅ default ON
 let answered = false;
-let currentChoices = null; // { correctKey, options:[{key, zh, py}] }
+let currentChoices = null; // { correctKey, options }
 
 const KNOWN_KEY = "lesson100_known_v1";
 const WRONG_KEY = "lesson100_wrong_v1";
@@ -282,101 +412,14 @@ function getQuizPool(){
   return idxs.length ? idxs : VIEW.map((_, i) => i);
 }
 
-// --- CSV ---
-function parseCSV(text){
-  // simple CSV parser: supports quotes and commas
-  const rows = [];
-  let row = [];
-  let cur = "";
-  let inQ = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-
-    if (ch === '"') {
-      // escaped quote
-      if (inQ && text[i + 1] === '"') { cur += '"'; i++; }
-      else inQ = !inQ;
-      continue;
-    }
-
-    if (!inQ && (ch === ',')) {
-      row.push(cur.trim());
-      cur = "";
-      continue;
-    }
-
-    if (!inQ && (ch === '
-' || ch === '
-')) {
-      // handle CRLF / CR / LF
-      if (ch === '
-' && text[i + 1] === '
-') i++;
-      row.push(cur.trim());
-      cur = "";
-      if (row.some(x => x !== "")) rows.push(row);
-      row = [];
-      continue;
-    }
-
-    cur += ch;
-  }
-
-  row.push(cur.trim());
-  if (row.some(x => x !== "")) rows.push(row);
-  return rows;
-}
-
-async function loadCSV(){
-  const res = await fetch("phrases.csv", { cache: "no-store" });
-  if (!res.ok) throw new Error("phrases.csv not found");
-  const text = await res.text();
-  let rows = parseCSV(text);
-
-  // drop header if present
-  const head = (rows[0] || []).map(x => (x || "").toLowerCase());
-  const hasHeader = head.includes("thai") || head.includes("chinese_pinyin") || head.includes("tts_key");
-  if (hasHeader) rows = rows.slice(1);
-
-  const out = [];
-  for (const r of rows) {
-    const thai = (r[0] || "").trim();
-    const zhpy = (r[1] || "").trim();
-    const key = (r[2] || "").trim();
-    if (!thai || !zhpy || !key) continue;
-    out.push([thai, zhpy, key]);
-  }
-  return out;
-}
-
-function splitZhPy(zhpy){
-  // expected: "中文 拼音"; split by last space
-  const s = (zhpy || "").trim();
-  const p = s.lastIndexOf(" ");
-  if (p <= 0) return { zh: s, py: "" };
-  const zh = s.slice(0, p).trim();
-  const py = s.slice(p + 1).trim();
-  // if pinyin looks too short, keep everything as zh
-  if (py.length < 2) return { zh: s, py: "" };
-  return { zh, py };
-}
-
-function zhAudioPath(key){ return "audio/" + key + ".mp3"; }
-function thAudioPath(key){
-  // key example: zh_cn_0014 -> th_0014.mp3
-  const parts = String(key).split("_");
-  let num = parts[parts.length - 1] || "0001";
-  num = String(num).padStart(4, "0");
-  return "audio_th/th_" + num + ".mp3";
-}
-
 function currentKey(){
   const idx = quizMode ? quizIdx : activeIdx;
   return (VIEW[idx] || [])[2] || "";
 }
 
-// --- UI ---
+// ------------------------------
+// UI
+// ------------------------------
 function updateModeUI(){
   modeEl.textContent = quizMode ? "测验模式" : "普通模式";
 
@@ -401,10 +444,7 @@ function renderList(){
   listEl.innerHTML = "";
 
   for (let i = 0; i < VIEW.length; i++) {
-    const it = VIEW[i];
-    const thai = it[0];
-    const zhpy = it[1];
-    const key = it[2];
+    const [thai, zhpy, key] = VIEW[i];
 
     const div = document.createElement("div");
     const isActive = quizMode ? (i === quizIdx) : (i === activeIdx);
@@ -456,10 +496,7 @@ function renderList(){
 
 function renderStudyCard(){
   if (!VIEW.length) return;
-  const it = VIEW[activeIdx] || VIEW[0];
-  const thai = it[0];
-  const zhpy = it[1];
-  const key = it[2];
+  const [thai, zhpy, key] = VIEW[activeIdx] || VIEW[0];
   const sp = splitZhPy(zhpy);
 
   bigTH.textContent = thai;
@@ -471,10 +508,7 @@ function renderStudyCard(){
 
 function renderQuizCard(){
   if (!VIEW.length) return;
-  const it = VIEW[quizIdx] || VIEW[0];
-  const thai = it[0];
-  const zhpy = it[1];
-  const key = it[2];
+  const [thai, zhpy, key] = VIEW[quizIdx] || VIEW[0];
   const sp = splitZhPy(zhpy);
 
   bigTH.textContent = "Q" + String(quizIdx + 1).padStart(3, "0") + ". " + thai;
@@ -490,32 +524,22 @@ function renderQuizCard(){
       bigPY.textContent = "";
     }
   } else {
-    // non-mcq uses showAns button
     bigZH.textContent = "（点击“显示答案”）";
     bigPY.textContent = "";
   }
 }
 
-// --- MCQ ---
-function shuffle(arr){
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const t = arr[i];
-    arr[i] = arr[j];
-    arr[j] = t;
-  }
-  return arr;
-}
-
+// ------------------------------
+// MCQ
+// ------------------------------
 function buildChoices(){
   const it = VIEW[quizIdx];
   if (!it) return;
+
   const key = it[2];
   const sp0 = splitZhPy(it[1]);
 
   const options = [{ key, zh: sp0.zh, py: sp0.py }];
-
-  // pick 3 other options
   const pool = VIEW.filter(x => x[2] !== key);
   const need = Math.min(3, pool.length);
   const used = new Set([key]);
@@ -545,13 +569,11 @@ function renderChoicesUI(){
   for (let i = 0; i < currentChoices.options.length; i++) {
     const opt = currentChoices.options[i];
     const btn = document.createElement("button");
-    btn.className = "btn";
-    btn.style.textAlign = "left";
-    btn.style.width = "100%";
+    btn.className = "btn choiceBtn";
     btn.textContent = letters[i] + ". " + opt.zh + (opt.py ? ("  (" + opt.py + ")") : "");
 
     if (answered && opt.key === currentChoices.correctKey) {
-      btn.className = "btn primary";
+      btn.className = "btn primary choiceBtn";
     }
 
     btn.addEventListener("click", () => {
@@ -585,7 +607,9 @@ function renderChoicesUI(){
   }
 }
 
-// --- Audio ---
+// ------------------------------
+// Audio
+// ------------------------------
 async function safePlay(src){
   audio.loop = !!loopPlay.checked;
   audio.src = src;
@@ -595,7 +619,7 @@ async function safePlay(src){
   } catch (e) {
     alert("无法播放音频：" + src + "
 
-手机浏览器通常需要先手动点一次播放按钮解锁音频权限。");
+手机浏览器通常需要先手动点一次播放按钮解锁音频权限。" );
     return false;
   }
 }
@@ -612,9 +636,12 @@ async function playChinese(){
   await safePlay(zhAudioPath(key));
 }
 
-// --- Navigation ---
+// ------------------------------
+// Navigation
+// ------------------------------
 function next(){
   if (!VIEW.length) return;
+
   if (quizMode) {
     const pool = getQuizPool();
     const pos = pool.indexOf(quizIdx);
@@ -632,6 +659,7 @@ function next(){
 
 function prev(){
   if (!VIEW.length) return;
+
   if (quizMode) {
     const pool = getQuizPool();
     const pos = pool.indexOf(quizIdx);
@@ -677,6 +705,7 @@ function markKnown(){
   else known.add(key);
   saveKnown();
   renderList();
+  updateProgress();
 }
 
 function resetKnown(){
@@ -684,6 +713,7 @@ function resetKnown(){
   known.clear();
   saveKnown();
   renderList();
+  updateProgress();
 }
 
 function clearWrong(){
@@ -694,7 +724,9 @@ function clearWrong(){
   if (quizMode && mcqEnabled) buildChoices();
 }
 
-// --- Events ---
+// ------------------------------
+// Events
+// ------------------------------
 audio.addEventListener("ended", async () => {
   if (!autoNext.checked) return;
   next();
@@ -713,7 +745,7 @@ el("next").addEventListener("click", next);
 el("prev").addEventListener("click", prev);
 
 el("shuffle").addEventListener("click", () => {
-  // shuffle only in normal mode (quiz must keep CSV order)
+  // shuffle only in normal mode
   if (quizMode) return;
   VIEW = VIEW.slice().sort(() => Math.random() - 0.5);
   activeIdx = 0;
@@ -758,7 +790,6 @@ el("showAns").addEventListener("click", () => {
   if (!quizMode) return alert("请先进入测验模式（点击：听音问答）");
   if (mcqEnabled) return alert("选择题已开启：请直接作答，答完会显示答案。
 如需手动显示答案，请先关闭‘选择题’。" );
-  // non-mcq fallback: show answer once
   const it = VIEW[quizIdx];
   if (!it) return;
   const sp = splitZhPy(it[1]);
@@ -795,7 +826,9 @@ el("wrongOnlyBtn").addEventListener("click", () => {
 
 el("clearWrong").addEventListener("click", clearWrong);
 
-// --- Init ---
+// ------------------------------
+// Init
+// ------------------------------
 (async function init(){
   try {
     statusEl.textContent = "加载中…";
@@ -808,6 +841,7 @@ el("clearWrong").addEventListener("click", clearWrong);
     renderList();
     renderStudyCard();
     updateWrongStat();
+    applyMobileTabs();
   } catch (e) {
     console.error(e);
     statusEl.textContent = "错误：无法加载";
