@@ -216,6 +216,59 @@
 <script>
   "use strict";
 
+// ------------------------------
+// Mobile tabs (List / Practice)
+// ------------------------------
+// Define as GLOBAL to avoid "applyMobileTabs is not defined" errors
+if (typeof window.applyMobileTabs !== "function") {
+  window.applyMobileTabs = function applyMobileTabs() {
+    const isMobile = window.matchMedia("(max-width:699px)").matches;
+    const listPanel = document.getElementById("listPanel");
+    const cardPanel = document.getElementById("cardPanel");
+    const nav = document.getElementById("mobileNav");
+    if (!listPanel || !cardPanel || !nav) return;
+
+    if (!isMobile) {
+      nav.style.display = "none";
+      listPanel.style.display = "";
+      cardPanel.style.display = "";
+      return;
+    }
+
+    nav.style.display = "flex";
+    if (!window.__tab) window.__tab = "practice";
+
+    listPanel.style.display = (window.__tab === "list") ? "" : "none";
+    cardPanel.style.display = (window.__tab === "practice") ? "" : "none";
+
+    const tabList = document.getElementById("tabList");
+    const tabPractice = document.getElementById("tabPractice");
+    if (tabList && tabPractice) {
+      tabList.classList.toggle("active", window.__tab === "list");
+      tabPractice.classList.toggle("active", window.__tab === "practice");
+    }
+  };
+}
+
+if (typeof window.setTab !== "function") {
+  window.setTab = function setTab(tab) {
+    window.__tab = tab;
+    window.applyMobileTabs();
+  };
+}
+
+window.addEventListener("resize", () => window.applyMobileTabs());
+
+document.addEventListener("click", (e) => {
+  const t = e.target;
+  const id = t && t.id ? t.id : "";
+  if (id === "tabList") window.setTab("list");
+  if (id === "tabPractice") window.setTab("practice");
+});
+
+document.addEventListener("DOMContentLoaded", () => window.applyMobileTabs());
+
+
   const el = (id) => document.getElementById(id);
   const listEl = el("list");
   const qEl = el("q");
