@@ -274,8 +274,12 @@ function parseCSV(text){
       continue;
     }
 
-    if (!inQ && (ch === '' || ch === '')) {
-      if (ch === '' && text[i + 1] === '') i++;
+    if (!inQ && (ch === '
+' || ch === '
+')) {
+      if (ch === '
+' && text[i + 1] === '
+') i++;
       row.push(cur.trim());
       cur = "";
       if (row.some(x => x !== "")) rows.push(row);
@@ -847,3 +851,4 @@ el("clearWrong").addEventListener("click", clearWrong);
 </script>
 </body>
 </html>
+
