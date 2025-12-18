@@ -231,7 +231,746 @@
 <audio id="audio" preload="auto"></audio>
 
 <script>
-// ...其余内容如上...
+(function(){
+  "use strict";
+
+  function el(id){ return document.getElementById(id); }
+
+  var listEl = el("list");
+  var qEl = el("q");
+  var statusEl = el("status");
+  var modeEl = el("mode");
+
+  var bigTH = el("bigTH");
+  var bigZH = el("bigZH");
+  var bigPY = el("bigPY");
+  var keyEl = el("key");
+  var fileEl = el("file");
+
+  var barEl = el("bar");
+  var countEl = el("count");
+  var knownCountEl = el("knownCount");
+
+  var wrongStatEl = el("wrongStat");
+  var mcqCard = el("mcq");
+  var choicesEl = el("choices");
+  var mcqHintEl = el("mcqHint");
+
+  var csvWhereEl = el("csvWhere");
+
+  var audio = el("audio");
+  var autoNext = el("auto");
+  var loopPlay = el("loop");
+
+  // ------------------------------
+  // State
+  // ------------------------------
+  var DATA = [];
+  var VIEW = [];
+  var activeIdx = 0;
+
+  var quizMode = false;
+  var quizIdx = 0;
+
+  var mcqEnabled = true; // default ON
+  var answered = false;
+  var currentChoices = null; // { correctKey, options }
+
+  var wrongOnly = false;
+
+  var KNOWN_KEY = "lesson100_known_v1";
+  var WRONG_KEY = "lesson100_wrong_v1";
+
+  var known = new Set(JSON.parse(localStorage.getItem(KNOWN_KEY) || "[]"));
+  var wrongMap = JSON.parse(localStorage.getItem(WRONG_KEY) || "{}") || {};
+
+  function saveKnown(){ localStorage.setItem(KNOWN_KEY, JSON.stringify(Array.from(known))); }
+  function saveWrong(){ localStorage.setItem(WRONG_KEY, JSON.stringify(wrongMap)); updateWrongStat(); }
+
+  function updateWrongStat(){
+    var keys = Object.keys(wrongMap);
+    var total = 0;
+    for (var i=0;i<keys.length;i++) total += Number(wrongMap[keys[i]] || 0);
+    wrongStatEl.textContent = keys.length + "题/" + total + "次";
+  }
+
+  function getQuizPool(){
+    if (!wrongOnly) {
+      var all = [];
+      for (var i=0;i<VIEW.length;i++) all.push(i);
+      return all;
+    }
+    var keys = new Set(Object.keys(wrongMap));
+    var idxs = [];
+    for (var j=0;j<VIEW.length;j++) {
+      if (keys.has(VIEW[j][2])) idxs.push(j);
+    }
+    if (idxs.length) return idxs;
+    var fallback = [];
+    for (var k=0;k<VIEW.length;k++) fallback.push(k);
+    return fallback;
+  }
+
+  function currentKey(){
+    var idx = quizMode ? quizIdx : activeIdx;
+    return (VIEW[idx] || [])[2] || "";
+  }
+
+  // ------------------------------
+  // Mobile tabs
+  // ------------------------------
+  function applyMobileTabs(){
+    var isMobile = window.matchMedia("(max-width:699px)").matches;
+    var listPanel = el("listPanel");
+    var cardPanel = el("cardPanel");
+    var nav = el("mobileNav");
+    if (!listPanel || !cardPanel || !nav) return;
+
+    if (!isMobile) {
+      nav.style.display = "none";
+      listPanel.style.display = "";
+      cardPanel.style.display = "";
+      return;
+    }
+
+    if (!window.__tab) window.__tab = "practice";
+    nav.style.display = "flex";
+    listPanel.style.display = (window.__tab === "list") ? "" : "none";
+    cardPanel.style.display = (window.__tab === "practice") ? "" : "none";
+
+    el("tabList").classList.toggle("active", window.__tab === "list");
+    el("tabPractice").classList.toggle("active", window.__tab === "practice");
+  }
+
+  window.addEventListener("resize", applyMobileTabs);
+
+  document.addEventListener("click", function(e){
+    var t = e && e.target;
+    if (!t) return;
+    if (t.id === "tabList") { window.__tab = "list"; applyMobileTabs(); }
+    if (t.id === "tabPractice") { window.__tab = "practice"; applyMobileTabs(); }
+  });
+
+  // ------------------------------
+  // CSV
+  // ------------------------------
+  function parseCSV(text){
+    // Simple RFC4180-ish parser for comma + double quotes
+    var rows = [];
+    var row = [];
+    var cur = "";
+    var inQ = false;
+
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+
+      if (ch === '"') {
+        if (inQ && text[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQ = !inQ;
+        }
+        continue;
+      }
+
+      if (!inQ && ch === ',') {
+        row.push(cur.trim());
+        cur = "";
+        continue;
+      }
+
+      if (!inQ && (ch === '\n' || ch === '\r')) {
+        if (ch === '\r' && text[i + 1] === '\n') i++; // handle CRLF
+        row.push(cur.trim());
+        cur = "";
+        if (row.some(function (x) { return x !== ""; })) rows.push(row);
+        row = [];
+        continue;
+      }
+
+      cur += ch;
+    }
+
+    row.push(cur.trim());
+    if (row.some(function (x) { return x !== ""; })) rows.push(row);
+    return rows;
+  }
+
+  function loadCSV(){
+    // Locked to your GitHub Pages structure
+    var url = "/lesson100/phrases.csv";
+
+    return fetch(url, { cache: "no-store" })
+      .then(function(res){
+        if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText + " | " + url);
+        return res.text();
+      })
+      .then(function(text){
+        var rows = parseCSV(text);
+
+        // header optional
+        var head = (rows[0] || []).map(function(x){ return String(x || "").toLowerCase(); });
+        var hasHeader = head.indexOf("thai") !== -1 || head.indexOf("chinese_pinyin") !== -1 || head.indexOf("tts_key") !== -1;
+        if (hasHeader) rows = rows.slice(1);
+
+        var out = [];
+        for (var i=0;i<rows.length;i++) {
+          var r = rows[i];
+          var thai = String(r[0] || "").trim();
+          var zhpy = String(r[1] || "").trim();
+          var key  = String(r[2] || "").trim();
+          if (!thai || !zhpy || !key) continue;
+          out.push([thai, zhpy, key]);
+        }
+
+        if (!out.length) throw new Error("CSV downloaded but empty after parse. Expect 3 cols: Thai,Chinese_Pinyin,TTS_Key");
+        if (csvWhereEl) csvWhereEl.textContent = "CSV：" + url;
+        return out;
+      })
+      .catch(function(e){
+        var msg = "无法加载CSV。" +
+          "Request URL: " + url + "" +
+          "错误：" + (e && e.message ? e.message : String(e)) + "" +
+          "检查：1) phrases.csv 是否在仓库根目录且大小写一致 2) Pages 发布源 main/root 3) 不要 file:// / Drive 预览";
+        throw new Error(msg);
+      });
+  }
+
+  function splitZhPy(zhpy){
+    var s = String(zhpy || "").trim();
+    var p = s.lastIndexOf(" ");
+    if (p <= 0) return { zh: s, py: "" };
+    var zh = s.slice(0, p).trim();
+    var py = s.slice(p + 1).trim();
+    if (py.length < 2) return { zh: s, py: "" };
+    return { zh: zh, py: py };
+  }
+
+  function zhAudioPath(key){ return "audio/" + key + ".mp3"; }
+  function thAudioPath(key){
+    // key like zh_cn_0014 => th_0014.mp3
+    var parts = String(key).split("_");
+    var num = parts[parts.length - 1] || "0001";
+    num = String(num).padStart(4, "0");
+    return "audio_th/th_" + num + ".mp3";
+  }
+
+  function shuffle(arr){
+    for (var i=arr.length-1;i>0;i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i];
+      arr[i] = arr[j];
+      arr[j] = t;
+    }
+    return arr;
+  }
+
+  // ------------------------------
+  // UI
+  // ------------------------------
+  function updateModeUI(){
+    modeEl.textContent = quizMode ? "测验模式" : "普通模式";
+
+    el("showAns").style.display = quizMode ? "inline-block" : "none";
+    el("mcqMode").style.display = quizMode ? "inline-block" : "none";
+    el("playTh").style.display = quizMode ? "inline-block" : "none";
+    el("playZh").style.display = quizMode ? "inline-block" : "none";
+
+    mcqCard.style.display = (quizMode && mcqEnabled) ? "block" : "none";
+  }
+
+  function updateProgress(){
+    var total = VIEW.length || 1;
+    var kc = 0;
+    for (var i=0;i<VIEW.length;i++) if (known.has(VIEW[i][2])) kc++;
+    knownCountEl.textContent = "已熟悉 " + kc;
+    barEl.style.width = Math.round((kc / total) * 100) + "%";
+    updateWrongStat();
+  }
+
+  function renderList(){
+    listEl.innerHTML = "";
+
+    for (var i=0;i<VIEW.length;i++) {
+      (function(i){
+        var thai = VIEW[i][0];
+        var zhpy = VIEW[i][1];
+        var key = VIEW[i][2];
+
+        var div = document.createElement("div");
+        var isActive = quizMode ? (i === quizIdx) : (i === activeIdx);
+        div.className = "item" + (isActive ? " active" : "");
+
+        var idx = document.createElement("div");
+        idx.className = "idx";
+        idx.textContent = String(i + 1).padStart(3, "0");
+
+        var body = document.createElement("div");
+        var th = document.createElement("div");
+        th.className = "th";
+
+        var wrongTag = wrongMap[key] ? ("  ✗" + wrongMap[key]) : "";
+        th.textContent = thai + (known.has(key) ? "  ✓" : "") + wrongTag;
+
+        var zh = document.createElement("div");
+        zh.className = "zh";
+        zh.textContent = zhpy;
+
+        body.appendChild(th);
+        body.appendChild(zh);
+
+        div.appendChild(idx);
+        div.appendChild(body);
+
+        div.addEventListener("click", function(){
+          if (quizMode) {
+            quizIdx = i;
+            answered = false;
+            currentChoices = null;
+            renderList();
+            renderQuizCard();
+            if (mcqEnabled) buildChoices();
+            playThai();
+          } else {
+            activeIdx = i;
+            renderList();
+            renderStudyCard();
+            playChinese();
+          }
+
+          if (window.matchMedia("(max-width:699px)").matches) {
+            window.__tab = "practice";
+            applyMobileTabs();
+          }
+        });
+
+        listEl.appendChild(div);
+      })(i);
+    }
+
+    countEl.textContent = VIEW.length + " 条";
+    updateProgress();
+  }
+
+  function renderStudyCard(){
+    if (!VIEW.length) return;
+    var it = VIEW[activeIdx] || VIEW[0];
+    var thai = it[0];
+    var zhpy = it[1];
+    var key = it[2];
+
+    var sp = splitZhPy(zhpy);
+
+    bigTH.textContent = thai;
+    bigZH.textContent = sp.zh || "—";
+    bigPY.textContent = sp.py || "";
+
+    keyEl.textContent = key;
+    fileEl.textContent = "ZH: " + zhAudioPath(key);
+  }
+
+  function renderQuizCard(){
+    if (!VIEW.length) return;
+    var it = VIEW[quizIdx] || VIEW[0];
+    var thai = it[0];
+    var zhpy = it[1];
+    var key = it[2];
+
+    var sp = splitZhPy(zhpy);
+
+    bigTH.textContent = "Q" + String(quizIdx + 1).padStart(3, "0") + ". " + thai;
+    keyEl.textContent = key;
+    fileEl.textContent = "TH: " + thAudioPath(key) + " | ZH: " + zhAudioPath(key);
+
+    if (mcqEnabled) {
+      if (answered) {
+        bigZH.textContent = sp.zh || "—";
+        bigPY.textContent = sp.py || "";
+      } else {
+        bigZH.textContent = "（四选一：请选择正确答案）";
+        bigPY.textContent = "";
+      }
+    } else {
+      bigZH.textContent = "（点击“显示答案”）";
+      bigPY.textContent = "";
+    }
+  }
+
+  // ------------------------------
+  // MCQ
+  // ------------------------------
+  function buildChoices(){
+    var it = VIEW[quizIdx];
+    if (!it) return;
+
+    var key = it[2];
+    var sp0 = splitZhPy(it[1]);
+
+    var options = [{ key: key, zh: sp0.zh, py: sp0.py }];
+    var pool = [];
+    for (var i=0;i<VIEW.length;i++) if (VIEW[i][2] !== key) pool.push(VIEW[i]);
+
+    var need = Math.min(3, pool.length);
+    var used = new Set([key]);
+
+    while (options.length < 1 + need) {
+      var pick = pool[Math.floor(Math.random() * pool.length)];
+      var pKey = pick[2];
+      if (used.has(pKey)) continue;
+      used.add(pKey);
+      var sp = splitZhPy(pick[1]);
+      options.push({ key: pKey, zh: sp.zh, py: sp.py });
+    }
+
+    shuffle(options);
+    currentChoices = { correctKey: key, options: options };
+    answered = false;
+    mcqHintEl.textContent = "点击选项作答。答完会显示正误；可点“播放中文”听正确答案。";
+    renderChoicesUI();
+  }
+
+  function renderChoicesUI(){
+    choicesEl.innerHTML = "";
+    if (!quizMode || !mcqEnabled || !currentChoices) return;
+
+    var letters = ["A","B","C","D"];
+    for (var i=0;i<currentChoices.options.length;i++) {
+      (function(i){
+        var opt = currentChoices.options[i];
+        var btn = document.createElement("button");
+        btn.className = "btn choiceBtn";
+        btn.textContent = letters[i] + ". " + opt.zh + (opt.py ? ("  (" + opt.py + ")") : "");
+
+        if (answered && opt.key === currentChoices.correctKey) {
+          btn.className = "btn primary choiceBtn";
+        }
+
+        btn.addEventListener("click", function(){
+          if (answered) return;
+          answered = true;
+
+          var correctKey = currentChoices.correctKey;
+          if (opt.key === correctKey) {
+            mcqHintEl.textContent = "✅ 正确！";
+          } else {
+            mcqHintEl.textContent = "❌ 错了：已加入错题。";
+            wrongMap[correctKey] = Number(wrongMap[correctKey] || 0) + 1;
+            saveWrong();
+          }
+
+          renderQuizCard();
+          renderChoicesUI();
+
+          if (autoNext.checked) {
+            setTimeout(function(){
+              nextQuestion();
+              playThai();
+            }, 600);
+          }
+        });
+
+        choicesEl.appendChild(btn);
+      })(i);
+    }
+  }
+
+  // ------------------------------
+  // Audio
+  // ------------------------------
+  function safePlay(src){
+    audio.loop = !!(loopPlay && loopPlay.checked);
+    audio.src = src;
+    return audio.play().catch(function(){
+      alert(
+        "无法播放音频：" + src + "" +
+        "请检查：" +
+        "1) 中文音频：audio/<key>.mp3 是否存在" +
+        "2) 泰语音频：audio_th/th_XXXX.mp3 是否存在" +
+        "3) 手机浏览器需先手动点一次播放按钮解锁权限" +
+        "4) 建议用 GitHub Pages 打开（不要 Drive 预览）"
+      );
+    });
+  }
+
+  function playThai(){
+    var key = currentKey();
+    if (!key) return;
+    safePlay(thAudioPath(key));
+  }
+
+  function playChinese(){
+    var key = currentKey();
+    if (!key) return;
+    safePlay(zhAudioPath(key));
+  }
+
+  // ------------------------------
+  // Navigation
+  // ------------------------------
+  function nextQuestion(){
+    if (!VIEW.length) return;
+    var pool = getQuizPool();
+    var pos = pool.indexOf(quizIdx);
+    quizIdx = pool[(pos + 1) % pool.length];
+    answered = false;
+    currentChoices = null;
+    renderList();
+    renderQuizCard();
+    if (mcqEnabled) buildChoices();
+  }
+
+  function prevQuestion(){
+    if (!VIEW.length) return;
+    var pool = getQuizPool();
+    var pos = pool.indexOf(quizIdx);
+    quizIdx = pool[(pos - 1 + pool.length) % pool.length];
+    answered = false;
+    currentChoices = null;
+    renderList();
+    renderQuizCard();
+    if (mcqEnabled) buildChoices();
+  }
+
+  function nextStudy(){
+    if (!VIEW.length) return;
+    activeIdx = (activeIdx + 1) % VIEW.length;
+    renderList();
+    renderStudyCard();
+  }
+
+  function prevStudy(){
+    if (!VIEW.length) return;
+    activeIdx = (activeIdx - 1 + VIEW.length) % VIEW.length;
+    renderList();
+    renderStudyCard();
+  }
+
+  function applyFilter(){
+    var q = String(qEl.value || "").trim().toLowerCase();
+    if (!q) {
+      VIEW = DATA.slice();
+    } else {
+      VIEW = DATA.filter(function(it){
+        return String(it[0]).toLowerCase().includes(q) ||
+               String(it[1]).toLowerCase().includes(q) ||
+               String(it[2]).toLowerCase().includes(q);
+      });
+    }
+
+    activeIdx = 0;
+    quizIdx = 0;
+    answered = false;
+    currentChoices = null;
+
+    renderList();
+    if (quizMode) {
+      renderQuizCard();
+      if (mcqEnabled) buildChoices();
+    } else {
+      renderStudyCard();
+    }
+  }
+
+  function markKnown(){
+    var key = currentKey();
+    if (!key) return;
+    if (known.has(key)) known.delete(key);
+    else known.add(key);
+    saveKnown();
+    renderList();
+    updateProgress();
+  }
+
+  function resetKnown(){
+    if (!confirm("确定要清空所有‘已熟悉’标记吗？")) return;
+    known.clear();
+    saveKnown();
+    renderList();
+    updateProgress();
+  }
+
+  function clearWrong(){
+    if (!confirm("确定要清空错题记录吗？")) return;
+    var ks = Object.keys(wrongMap);
+    for (var i=0;i<ks.length;i++) delete wrongMap[ks[i]];
+    saveWrong();
+    renderList();
+    if (quizMode && mcqEnabled) buildChoices();
+  }
+
+  // ------------------------------
+  // Events
+  // ------------------------------
+  el("clear").addEventListener("click", function(){ qEl.value = ""; applyFilter(); });
+  qEl.addEventListener("input", applyFilter);
+
+  el("shuffle").addEventListener("click", function(){
+    if (quizMode) return;
+    VIEW = VIEW.slice().sort(function(){ return Math.random() - 0.5; });
+    activeIdx = 0;
+    renderList();
+    renderStudyCard();
+  });
+
+  function onPrev(){
+    if (quizMode) { prevQuestion(); playThai(); }
+    else { prevStudy(); playChinese(); }
+  }
+  function onNext(){
+    if (quizMode) { nextQuestion(); playThai(); }
+    else { nextStudy(); playChinese(); }
+  }
+
+  el("prev").addEventListener("click", onPrev);
+  el("next").addEventListener("click", onNext);
+  el("prevQ").addEventListener("click", onPrev);
+  el("nextQ").addEventListener("click", onNext);
+
+  el("replay").addEventListener("click", function(){
+    if (quizMode) playThai();
+    else playChinese();
+  });
+
+  el("playTh").addEventListener("click", function(){
+    if (!quizMode) return alert("请先进入测验模式（点击：听音问答）");
+    playThai();
+  });
+
+  el("playZh").addEventListener("click", function(){
+    if (!quizMode) return alert("请先进入测验模式（点击：听音问答）");
+    playChinese();
+  });
+
+  el("showAns").addEventListener("click", function(){
+    if (!quizMode) return alert("请先进入测验模式（点击：听音问答）");
+    if (mcqEnabled) {
+      return alert("选择题已开启：请直接作答，答完会显示答案。如需手动显示答案，请先关闭‘选择题’。");
+    }
+    var it = VIEW[quizIdx];
+    if (!it) return;
+    var sp = splitZhPy(it[1]);
+    bigZH.textContent = sp.zh || "—";
+    bigPY.textContent = sp.py || "";
+  });
+
+  el("mcqMode").addEventListener("click", function(){
+    if (!quizMode) return alert("请先进入测验模式（点击：听音问答）");
+    mcqEnabled = !mcqEnabled;
+    answered = false;
+    currentChoices = null;
+    updateModeUI();
+    renderQuizCard();
+    if (mcqEnabled) buildChoices();
+  });
+
+  el("wrongOnlyBtn").addEventListener("click", function(){
+    wrongOnly = !wrongOnly;
+    el("wrongOnlyBtn").textContent = "只练错题：" + (wrongOnly ? "开" : "关");
+    if (quizMode) {
+      var pool = getQuizPool();
+      quizIdx = pool[0] || 0;
+      answered = false;
+      currentChoices = null;
+      renderList();
+      renderQuizCard();
+      if (mcqEnabled) buildChoices();
+      playThai();
+    }
+  });
+
+  el("clearWrong").addEventListener("click", clearWrong);
+  el("mark").addEventListener("click", markKnown);
+  el("reset").addEventListener("click", resetKnown);
+
+  el("quiz").addEventListener("click", function(){
+    quizMode = !quizMode;
+    answered = false;
+    currentChoices = null;
+    quizIdx = activeIdx;
+
+    updateModeUI();
+    renderList();
+
+    if (quizMode) {
+      renderQuizCard();
+      if (mcqEnabled) buildChoices();
+      playThai();
+    } else {
+      renderStudyCard();
+    }
+
+    if (window.matchMedia("(max-width:699px)").matches) {
+      window.__tab = "practice";
+      applyMobileTabs();
+    }
+  });
+
+  audio.addEventListener("ended", function(){
+    if (!autoNext.checked) return;
+    if (quizMode) {
+      nextQuestion();
+      playThai();
+    } else {
+      nextStudy();
+      playChinese();
+    }
+  });
+
+  // ------------------------------
+  // Minimal tests
+  // ------------------------------
+  function assert(cond, msg){ if (!cond) throw new Error("Test failed: " + msg); }
+  function runTests(){
+    var sample = "Thai,Chinese_Pinyin,TTS_Key สวัสดี,你好 nǐ hǎo,zh_cn_0001";
+    var rows = parseCSV(sample);
+    assert(rows.length === 2, "parseCSV rows");
+    var sp = splitZhPy("你好 nǐ");
+    assert(sp.zh === "你好", "split zh");
+    assert(thAudioPath("zh_cn_0014").indexOf("th_0014.mp3") !== -1, "thAudioPath mapping");
+  }
+
+  // ------------------------------
+  // Init
+  // ------------------------------
+  function init(){
+    try {
+      runTests();
+    } catch (e) {
+      console.error(e);
+      alert("内置测试失败：" + (e && e.message ? e.message : String(e)));
+      return;
+    }
+
+    statusEl.textContent = "加载中…";
+
+    loadCSV()
+      .then(function(out){
+        DATA = out;
+        VIEW = DATA.slice();
+
+        statusEl.textContent = "已加载：" + DATA.length + "条";
+
+        updateModeUI();
+        renderList();
+        renderStudyCard();
+        updateWrongStat();
+        applyMobileTabs();
+
+        if (window.matchMedia("(max-width:699px)").matches) {
+          window.__tab = "practice";
+          applyMobileTabs();
+        }
+      })
+      .catch(function(e){
+        console.error(e);
+        statusEl.textContent = "错误：无法加载CSV";
+        alert(e && e.message ? e.message : String(e));
+      });
+  }
+
+  init();
+})();
 </script>
 </body>
 </html>
