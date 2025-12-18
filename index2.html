@@ -274,12 +274,8 @@ function parseCSV(text){
       continue;
     }
 
-    if (!inQ && (ch === '
-' || ch === '
-')) {
-      if (ch === '
-' && text[i + 1] === '
-') i++;
+    if (!inQ && (ch === '\n' || ch === '\r')) {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
       row.push(cur.trim());
       cur = "";
       if (row.some(x => x !== "")) rows.push(row);
