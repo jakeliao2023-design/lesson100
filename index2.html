@@ -132,8 +132,8 @@
           <b>文件结构（同一文件夹）:</b><br/>
           <code>index.html</code>（本文件）<br/>
           <code>phrases.csv</code>（3列：Thai,Chinese_Pinyin,TTS_Key）<br/>
-          <code>audio/</code>（中文音频 / เสียงภาษาจีน）<code>&lt;key&gt;.mp3</code><br/>
-          <code>audio_th/</code>（泰语音频 / เสียงภาษาไทย）<code>&lt;key&gt;.mp3</code><br/>
+          <code>audio/</code>（中文音频 / เสียงภาษาจีน）<code>&lt;key&gt;.mp3</code>（例如 <code>audio/zh_cn_0001.mp3</code>）<br/>
+          <code>audio_th/</code>（泰语音频 / เสียงภาษาไทย）<code>th_0001.mp3</code>（例如 <code>audio_th/th_0001.mp3</code>）<br/>
           <br/>
           <b class="warn">注意：</b>手机浏览器通常需要先点一次播放按钮解锁音频权限。
         </div>
@@ -237,13 +237,13 @@
   function zhAudioPath(key) {
     return `audio/${key}.mp3`;
   }
+
   function thAudioPath(key) {
-    // 泰语音频命名规则：th_0001.mp3，与 CSV 顺序一致
+    // ✅ 泰语音频命名规则：th_0001.mp3
     // 从 key 中取序号（如 zh_cn_0001 -> 0001）
     const m = key.match(/(\d+)$/);
     const num = m ? m[1].padStart(4, "0") : "0001";
     return "audio_th/th_" + num + ".mp3";
-  }.mp3`;
   }
 
   function currentKey() {
@@ -305,6 +305,7 @@
           // 测验模式：保持 CSV 顺序，但允许跳题（仍是按原序号定位）
           quizIdx = i;
           quizReveal = false;
+          renderList();
           renderQuizCard();
           await playThai();
         } else {
@@ -363,8 +364,8 @@
       alert(
         "无法播放音频。请确认：\n" +
         "1) phrases.csv 与 index.html 同目录\n" +
-        "2) 中文音频：audio/<key>.mp3 存在\n" +
-        "3) 泰语音频：audio_th/<key>.mp3 存在\n" +
+        "2) 中文音频：audio/<key>.mp3 存在（例如 audio/zh_cn_0001.mp3）\n" +
+        "3) 泰语音频：audio_th/th_0001.mp3 存在\n" +
         "4) 手机浏览器需要先手动点一次播放按钮解锁音频权限\n" +
         "5) 建议用静态网站方式打开（不要用 Drive 文本预览）"
       );
@@ -415,7 +416,6 @@
   function shuffle() {
     if (!VIEW.length) return;
     // 随机只影响显示顺序，不改变 DATA 原始顺序（你要求“保持 CSV 顺序不变”的出题；出题用 DATA 索引）
-    // 这里的“随机”按钮只随机 VIEW 展示（搜索后也会影响）。
     VIEW = VIEW.slice().sort(() => Math.random() - 0.5);
     activeIdx = 0;
     quizIdx = 0;
@@ -535,6 +535,7 @@
   function assert(cond, msg) {
     if (!cond) throw new Error("Test failed: " + msg);
   }
+
   function runTests() {
     // CSV parsing tests
     const sample = "Thai,Chinese_Pinyin,TTS_Key\nสวัสดี,你好 nǐ hǎo,zh_cn_0001\n";
@@ -549,6 +550,11 @@
 
     const s2 = splitZhPy("不用谢");
     assert(s2.zh === "不用谢" && s2.py === "", "splitZhPy no pinyin");
+
+    // Thai audio path tests (your new naming)
+    assert(thAudioPath("zh_cn_0001") === "audio_th/th_0001.mp3", "thAudioPath maps key to th_0001");
+    assert(thAudioPath("zh_cn_12") === "audio_th/th_0012.mp3", "thAudioPath zero pads to 4 digits");
+    assert(thAudioPath("anything") === "audio_th/th_0001.mp3", "thAudioPath fallback");
   }
 
   (async function init(){
