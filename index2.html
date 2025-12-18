@@ -16,9 +16,9 @@
     .wrap{max-width:1100px;margin:0 auto;padding:16px}
     .top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     h1{font-size:18px;margin:0}
-    .pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px;line-height:1.25}
+    .pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px}
     .grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
-    @media(min-width:900px){.grid{grid-template-columns:420px 1fr}}
+    @media(min-width:900px){.grid{grid-template-columns:380px 1fr}}
 
     .panel{background:rgba(15,26,48,.7);border:1px solid var(--border);border-radius:14px;overflow:hidden}
     .panel .hd{padding:12px 12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -54,50 +54,25 @@
     .progress{height:10px;background:#071022;border-radius:999px;border:1px solid var(--border);overflow:hidden}
     .bar{height:100%;background:linear-gradient(90deg,#16a34a,#22c55e);width:0%}
 
-    .toggle{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px}
+    .toggle{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:12px}
     .toggle input{transform:scale(1.1)}
 
     .note{color:var(--muted);font-size:12px;line-height:1.5}
     code{background:#071022;padding:2px 6px;border-radius:8px;border:1px solid var(--border)}
     .warn{color:#fbbf24}
 
-    /* 听力考试模式：全遮文字（显示为占位块），点“显示答案”才临时露出 */
-    body.exam .th, body.exam .zh,
-    body.exam #bigTH, body.exam #bigZH, body.exam #bigPY {
-      color: transparent !important;
-      text-shadow: none !important;
-    }
-    body.exam .th, body.exam .zh,
-    body.exam #bigTH, body.exam #bigZH, body.exam #bigPY {
-      position: relative;
-    }
-    body.exam .th::after,
-    body.exam .zh::after,
-    body.exam #bigTH::after,
-    body.exam #bigZH::after,
-    body.exam #bigPY::after {
-      content: "";
-      position:absolute;left:0;top:50%;transform:translateY(-50%);
-      width: min(260px, 85%);
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(148,163,184,.25);
-    }
-    body.exam .zh::after { height: 8px; opacity:.9; }
-    body.exam #bigTH::after { height: 14px; }
-    body.exam #bigZH::after { height: 12px; }
-    body.exam #bigPY::after { height: 10px; }
-
-    .banner{display:none}
-    body.exam .banner{display:block; padding:10px 12px; border:1px dashed rgba(96,165,250,.5); border-radius:12px; color:#c7d2fe; background:rgba(96,165,250,.08)}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(8,16,34,.6);color:var(--muted);font-size:12px}
   </style>
 </head>
 <body>
 <header>
   <div class="wrap">
     <div class="top">
-      <h1>中文常用语 100 句｜点读课件（CSV版）<br/><span style="font-size:13px;color:#94a3b8">บทเรียนภาษาจีน 100 ประโยค (คลิกเพื่อฟังเสียง)</span></h1>
-      <span class="pill">点击词条播放 · TH → ZH<br/>คลิกเพื่อฟังเสียง</span>
+      <h1>
+        中文常用语 100 句｜点读课件（CSV版）
+        <br/><span style="font-size:13px;color:#94a3b8">บทเรียนภาษาจีน 100 ประโยค (คลิกเพื่อฟังเสียง)</span>
+      </h1>
+      <span class="pill">普通模式：点击列表播放中文｜测验：题目泰语+泰语音频，答案中文+拼音</span>
       <span class="pill" id="status">未加载</span>
     </div>
   </div>
@@ -106,6 +81,7 @@
 <main class="wrap">
   <div class="grid">
 
+    <!-- 左侧：列表 -->
     <section class="panel">
       <div class="hd">
         <input id="q" type="text" placeholder="搜索：泰语 / 中文 / 拼音 / key …" />
@@ -113,36 +89,30 @@
       </div>
       <div class="bd">
         <div class="row" style="margin-bottom:10px">
-          <button class="btn" id="quiz">🎧 听音选句<br/>แบบฝึกหัดฟังเสียง</button>
+          <button class="btn" id="quiz">🎧 听音问答<br/>แบบทดสอบฟังเสียง</button>
           <button class="btn secondary" id="shuffle">随机</button>
           <button class="btn" id="prev">上一条</button>
           <button class="btn" id="next">下一条</button>
         </div>
-
-        <div class="row" style="margin-bottom:10px">
-          <span class="toggle"><input type="radio" name="speed" id="spdNormal" checked /> 正常语速<br/>ความเร็วปกติ</span>
-          <span class="toggle"><input type="radio" name="speed" id="spdSlow" /> 慢速<br/>ช้า</span>
-          <span class="toggle"><input type="checkbox" id="exam" /> 听力考试（全遮文字）<br/>โหมดสอบฟัง</span>
-          <button class="btn" id="reveal">👁 显示答案（3秒）<br/>แสดงคำตอบ</button>
-        </div>
-
-        <div class="banner" id="examBanner">🎧 听力考试模式：先听音频，再选答案；可用“显示答案”查看。<br/>โหมดสอบฟัง: ฟังก่อน แล้วเลือกคำตอบ</div>
-
         <div class="progress" title="学习进度（已标记熟悉）"><div class="bar" id="bar"></div></div>
         <div class="meta" style="margin:10px 0 0">
           <span id="count">0 条</span>
           <span id="knownCount">已熟悉 0</span>
           <span class="toggle"><input type="checkbox" id="auto" /> 自动下一条</span>
           <span class="toggle"><input type="checkbox" id="loop" /> 循环播放</span>
+          <span class="badge" id="mode">普通模式</span>
         </div>
       </div>
       <div class="list" id="list"></div>
     </section>
 
+    <!-- 右侧：卡片 -->
     <section class="panel">
       <div class="hd">
-        <button class="btn primary" id="play">▶ 播放</button>
+        <button class="btn primary" id="playTh">▶ 播放泰语<br/>เล่นภาษาไทย</button>
         <button class="btn" id="replay">⟲ 重播</button>
+        <button class="btn secondary" id="showAns">👁 显示答案<br/>ดูคำตอบ</button>
+        <button class="btn" id="playZh">▶ 播放中文<br/>เล่นภาษาจีน</button>
         <button class="btn" id="mark">✓ 标记熟悉</button>
         <button class="btn danger" id="reset">重置熟悉</button>
       </div>
@@ -159,17 +129,13 @@
 
         <div style="height:12px"></div>
         <div class="note">
-          <b>学习模式说明 / คำอธิบายโหมดการเรียน:</b><br/>
-          • 普通模式：点击句子听音学习<br/>
-          • 听音选句：先听声音，再选择正确的句子<br/>
-          • 听力考试：全遮文字（建议搭配“听音选句”）<br/>
+          <b>文件结构（同一文件夹）:</b><br/>
+          <code>index.html</code>（本文件）<br/>
+          <code>phrases.csv</code>（3列：Thai,Chinese_Pinyin,TTS_Key）<br/>
+          <code>audio/</code>（中文音频 / เสียงภาษาจีน）<code>&lt;key&gt;.mp3</code><br/>
+          <code>audio_th/</code>（泰语音频 / เสียงภาษาไทย）<code>&lt;key&gt;.mp3</code><br/>
           <br/>
-          <b>音频文件命名：</b><br/>
-          正常语速：<code>audio/&lt;key&gt;.mp3</code><br/>
-          慢速：<code>audio/&lt;key&gt;_slow.mp3</code><br/>
-          <br/>
-          <b class="warn">注意：</b>手机浏览器通常需要先点一次「播放」解锁音频权限。<br/>
-          หมายเหตุ: มือถือจำเป็นต้องกดเล่นครั้งแรกก่อน
+          <b class="warn">注意：</b>手机浏览器通常需要先点一次播放按钮解锁音频权限。
         </div>
       </div>
     </section>
@@ -180,10 +146,13 @@
 <audio id="audio" preload="auto"></audio>
 
 <script>
+  "use strict";
+
   const el = (id) => document.getElementById(id);
   const listEl = el("list");
   const qEl = el("q");
   const statusEl = el("status");
+  const modeEl = el("mode");
 
   const bigTH = el("bigTH");
   const bigZH = el("bigZH");
@@ -198,32 +167,17 @@
   const autoNext = el("auto");
   const loopPlay = el("loop");
 
-  const spdNormal = el("spdNormal");
-  const spdSlow = el("spdSlow");
-  const examToggle = el("exam");
-  const revealBtn = el("reveal");
-  const examBanner = el("examBanner");
-
   let DATA = [];
   let VIEW = [];
   let activeIdx = 0;
 
-  // Quiz state
+  // 测验模式：按 CSV 顺序出题；题目=泰语+泰语音频；答案=中文+拼音 + 播放中文按钮
   let quizMode = false;
-  let quizAnswerKey = null;
-  let quizOptions = null; // Array<[thai, zhpy, key]> length 4
+  let quizIdx = 0;
+  let quizReveal = false;
 
   const KNOWN_KEY = "lesson100_known_v1";
   const known = new Set(JSON.parse(localStorage.getItem(KNOWN_KEY) || "[]"));
-
-  function shuffleArray(arr) {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
 
   function parseCSV(csv) {
     const lines = csv.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
@@ -239,7 +193,8 @@
           if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
           else inQ = !inQ;
         } else if (ch === ',' && !inQ) {
-          row.push(cur); cur = "";
+          row.push(cur);
+          cur = "";
         } else {
           cur += ch;
         }
@@ -256,6 +211,7 @@
     const text = await res.text();
     let rows = parseCSV(text);
 
+    // 跳过表头
     const head = (rows[0] || []).map(x => (x || "").toLowerCase());
     const hasHeader = head.includes("thai") || head.includes("chinese_pinyin") || head.includes("tts_key");
     if (hasHeader) rows = rows.slice(1);
@@ -272,18 +228,36 @@
   }
 
   function splitZhPy(zhpy) {
-    // “中文 + 空格 + 拼音”拆分（若你CSV里是“中文 pinyin”，可拆；否则拼音为空）
+    // 期望格式："中文 拼音"
     const m = zhpy.match(/^(.*?)(\s+[A-Za-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ\s]+.*)$/);
     if (!m) return { zh: zhpy, py: "" };
     return { zh: m[1].trim(), py: m[2].trim() };
   }
 
-  function audioPath(key, preferSlow) {
-    return preferSlow ? `audio/${key}_slow.mp3` : `audio/${key}.mp3`;
+  function zhAudioPath(key) {
+    return `audio/${key}.mp3`;
+  }
+  function thAudioPath(key) {
+    return `audio_th/${key}.mp3`;
   }
 
-  function preferredSlow() {
-    return !!spdSlow.checked;
+  function currentKey() {
+    const idx = quizMode ? quizIdx : activeIdx;
+    return (VIEW[idx] || [])[2] || "";
+  }
+
+  function updateModeUI() {
+    modeEl.textContent = quizMode ? "测验模式" : "普通模式";
+    el("showAns").style.display = quizMode ? "inline-block" : "none";
+    el("playZh").style.display = quizMode ? "inline-block" : "none";
+    el("playTh").style.display = quizMode ? "inline-block" : "none";
+
+    // 普通模式下：列表点击播放中文（更符合“点读课件”）
+    if (!quizMode) {
+      el("showAns").style.display = "none";
+      el("playZh").style.display = "none";
+      el("playTh").style.display = "none";
+    }
   }
 
   function updateProgress() {
@@ -295,21 +269,12 @@
 
   function renderList() {
     listEl.innerHTML = "";
-
-    const source = (quizMode && quizOptions) ? quizOptions : VIEW;
-
-    if (quizMode && quizOptions) {
-      countEl.textContent = `听音选句：4 选 1 / แบบฝึกหัด: เลือก 1 จาก 4`;
-    } else {
-      countEl.textContent = `${VIEW.length} 条`;
-    }
-
-    source.forEach((it, i) => {
+    VIEW.forEach((it, i) => {
       const [thai, zhpy, key] = it;
-
       const div = document.createElement("div");
-      const isActive = (!quizMode) && (key === VIEW[activeIdx]?.[2]);
+      const isActive = quizMode ? (i === quizIdx) : (i === activeIdx);
       div.className = "item" + (isActive ? " active" : "");
+      div.dataset.i = String(i);
 
       const idx = document.createElement("div");
       idx.className = "idx";
@@ -318,7 +283,7 @@
       const body = document.createElement("div");
       const th = document.createElement("div");
       th.className = "th";
-      th.textContent = thai + (!quizMode && known.has(key) ? "  ✓" : "");
+      th.textContent = thai + (known.has(key) ? "  ✓" : "");
 
       const zh = document.createElement("div");
       zh.className = "zh";
@@ -332,36 +297,29 @@
 
       div.addEventListener("click", async () => {
         if (quizMode) {
-          if (key === quizAnswerKey) {
-            alert("✅ 正确 / ถูกต้อง");
-          } else {
-            const correct = VIEW.find(x => x[2] === quizAnswerKey);
-            alert("❌ 错误 / ไม่ถูกต้อง\n正确答案 / คำตอบที่ถูก: " + (correct ? correct[0] : ""));
-          }
-          // 退出练习并定位正确句
-          quizMode = false;
-          quizOptions = null;
-          const idxInView = VIEW.findIndex(x => x[2] === quizAnswerKey);
+          // 测验模式：保持 CSV 顺序，但允许跳题（仍是按原序号定位）
+          quizIdx = i;
+          quizReveal = false;
+          renderQuizCard();
+          await playThai();
+        } else {
+          activeIdx = i;
           renderList();
-          if (idxInView >= 0) select(idxInView, true);
-          return;
+          renderStudyCard();
+          await playChinese();
         }
-
-        const idxInView = VIEW.findIndex(x => x[2] === key);
-        select(idxInView >= 0 ? idxInView : 0, true);
       });
 
       listEl.appendChild(div);
     });
 
+    countEl.textContent = `${VIEW.length} 条`;
     updateProgress();
   }
 
-  function select(i, scrollIntoView) {
-    if (i < 0 || i >= VIEW.length) return;
-    activeIdx = i;
-
-    const [thai, zhpy, key] = VIEW[activeIdx];
+  function renderStudyCard() {
+    if (!VIEW.length) return;
+    const [thai, zhpy, key] = VIEW[activeIdx] || VIEW[0];
     const { zh, py } = splitZhPy(zhpy);
 
     bigTH.textContent = thai;
@@ -369,89 +327,123 @@
     bigPY.textContent = py;
 
     keyEl.textContent = key;
-    fileEl.textContent = preferredSlow() ? audioPath(key, true) : audioPath(key, false);
+    fileEl.textContent = `ZH: ${zhAudioPath(key)}`;
+  }
 
-    if (scrollIntoView && !quizMode) {
-      const node = listEl.querySelectorAll(".item")[activeIdx];
-      node?.scrollIntoView({ block: "nearest" });
+  function renderQuizCard() {
+    if (!VIEW.length) return;
+    const [thai, zhpy, key] = VIEW[quizIdx] || VIEW[0];
+    const { zh, py } = splitZhPy(zhpy);
+
+    bigTH.textContent = `Q${String(quizIdx + 1).padStart(3, "0")}. ${thai}`;
+    keyEl.textContent = key;
+    fileEl.textContent = `TH: ${thAudioPath(key)} | ZH: ${zhAudioPath(key)}`;
+
+    if (quizReveal) {
+      bigZH.textContent = zh;
+      bigPY.textContent = py;
+    } else {
+      bigZH.textContent = "（点击“显示答案”）";
+      bigPY.textContent = "";
     }
   }
 
-  async function playKey(key) {
-    // 优先慢速，失败则回退正常
-    const slow = preferredSlow();
-    const try1 = audioPath(key, slow);
-    const try2 = audioPath(key, false);
-
-    audio.loop = false;
-    audio.src = try1;
-
-    try {
-      await audio.play();
-      return;
-    } catch (e) {}
-
-    audio.src = try2;
-    try {
-      await audio.play();
-    } catch (e) {
-      alert("无法播放音频。\n1) 确认 audio/ 下存在对应 mp3\n2) 手机需先点一次播放解锁权限\n3) 建议用 GitHub Pages/静态网站打开");
-    }
-  }
-
-  async function playCurrent() {
-    const [, , key] = VIEW[activeIdx] || [];
-    if (!key) return;
+  async function safePlay(src) {
     audio.loop = loopPlay.checked;
-    await playKey(key);
+    audio.src = src;
+    try {
+      await audio.play();
+      return true;
+    } catch (e) {
+      alert(
+        "无法播放音频。请确认：\n" +
+        "1) phrases.csv 与 index.html 同目录\n" +
+        "2) 中文音频：audio/<key>.mp3 存在\n" +
+        "3) 泰语音频：audio_th/<key>.mp3 存在\n" +
+        "4) 手机浏览器需要先手动点一次播放按钮解锁音频权限\n" +
+        "5) 建议用静态网站方式打开（不要用 Drive 文本预览）"
+      );
+      return false;
+    }
+  }
+
+  async function playThai() {
+    const key = currentKey();
+    if (!key) return;
+    await safePlay(thAudioPath(key));
+  }
+
+  async function playChinese() {
+    const key = currentKey();
+    if (!key) return;
+    await safePlay(zhAudioPath(key));
   }
 
   function next() {
     if (!VIEW.length) return;
-    select((activeIdx + 1) % VIEW.length, true);
+    if (quizMode) {
+      quizIdx = (quizIdx + 1) % VIEW.length;
+      quizReveal = false;
+      renderList();
+      renderQuizCard();
+    } else {
+      activeIdx = (activeIdx + 1) % VIEW.length;
+      renderList();
+      renderStudyCard();
+    }
   }
 
   function prev() {
     if (!VIEW.length) return;
-    select((activeIdx - 1 + VIEW.length) % VIEW.length, true);
+    if (quizMode) {
+      quizIdx = (quizIdx - 1 + VIEW.length) % VIEW.length;
+      quizReveal = false;
+      renderList();
+      renderQuizCard();
+    } else {
+      activeIdx = (activeIdx - 1 + VIEW.length) % VIEW.length;
+      renderList();
+      renderStudyCard();
+    }
   }
 
   function shuffle() {
     if (!VIEW.length) return;
-    const curKey = VIEW[activeIdx]?.[2];
-    VIEW = shuffleArray(VIEW);
+    // 随机只影响显示顺序，不改变 DATA 原始顺序（你要求“保持 CSV 顺序不变”的出题；出题用 DATA 索引）
+    // 这里的“随机”按钮只随机 VIEW 展示（搜索后也会影响）。
+    VIEW = VIEW.slice().sort(() => Math.random() - 0.5);
+    activeIdx = 0;
+    quizIdx = 0;
+    quizReveal = false;
     renderList();
-    const newIdx = VIEW.findIndex((x) => x[2] === curKey);
-    select(newIdx >= 0 ? newIdx : 0, true);
+    quizMode ? renderQuizCard() : renderStudyCard();
   }
 
   function applyFilter() {
     const q = (qEl.value || "").trim().toLowerCase();
-    // 过滤时退出练习
-    quizMode = false;
-    quizOptions = null;
-
-    if (!q) VIEW = DATA.slice();
-    else {
+    if (!q) {
+      VIEW = DATA.slice();
+    } else {
       VIEW = DATA.filter(([thai, zhpy, key]) =>
         thai.toLowerCase().includes(q) ||
         zhpy.toLowerCase().includes(q) ||
         key.toLowerCase().includes(q)
       );
     }
-
     activeIdx = 0;
+    quizIdx = 0;
+    quizReveal = false;
     renderList();
-    if (VIEW.length) select(0, false);
+    quizMode ? renderQuizCard() : renderStudyCard();
   }
 
   function markKnown() {
-    const [, , key] = VIEW[activeIdx] || [];
+    const key = quizMode ? (VIEW[quizIdx] || [])[2] : (VIEW[activeIdx] || [])[2];
     if (!key) return;
     if (known.has(key)) known.delete(key); else known.add(key);
     localStorage.setItem(KNOWN_KEY, JSON.stringify([...known]));
     renderList();
-    select(activeIdx, false);
+    updateProgress();
   }
 
   function resetKnown() {
@@ -459,84 +451,124 @@
     known.clear();
     localStorage.setItem(KNOWN_KEY, "[]");
     renderList();
-    select(activeIdx, false);
+    updateProgress();
   }
 
-  function startQuiz() {
-    if (!VIEW.length) return;
-    if (VIEW.length < 4) {
-      alert("条目太少，无法进入听音选句（需要至少 4 条）。");
-      return;
-    }
-
-    quizMode = true;
-    const answer = VIEW[Math.floor(Math.random() * VIEW.length)];
-    quizAnswerKey = answer[2];
-
-    const others = VIEW.filter(x => x[2] !== quizAnswerKey);
-    const picks = shuffleArray(others).slice(0, 3);
-    quizOptions = shuffleArray(picks.concat([answer]));
-
-    renderList();
-    playKey(quizAnswerKey);
-  }
-
-  function setExamMode(on) {
-    document.body.classList.toggle("exam", !!on);
-    examBanner.classList.toggle("banner", true);
-    examBanner.style.display = on ? "block" : "none";
-    if (on) statusEl.textContent = "听力考试模式 / โหมดสอบฟัง";
-    else statusEl.textContent = `已加载：phrases.csv（${DATA.length}条）`;
-  }
-
-  function revealOnce() {
-    // 临时显示答案 3 秒
-    if (!document.body.classList.contains("exam")) return;
-    document.body.classList.remove("exam");
-    setTimeout(() => document.body.classList.add("exam"), 3000);
-  }
-
+  // 结束自动下一条（测验与普通都支持）
   audio.addEventListener("ended", async () => {
     if (!autoNext.checked) return;
-    if (quizMode) return;
     next();
-    await playCurrent();
+    if (quizMode) {
+      await playThai();
+    } else {
+      await playChinese();
+    }
   });
 
-  // Buttons
-  el("play").addEventListener("click", () => playCurrent());
-  el("replay").addEventListener("click", () => playCurrent());
-  el("next").addEventListener("click", () => next());
-  el("prev").addEventListener("click", () => prev());
-  el("shuffle").addEventListener("click", () => shuffle());
-  el("quiz").addEventListener("click", () => startQuiz());
-
-  el("mark").addEventListener("click", () => markKnown());
-  el("reset").addEventListener("click", () => resetKnown());
+  // 绑定按钮
   el("clear").addEventListener("click", () => { qEl.value = ""; applyFilter(); });
   qEl.addEventListener("input", () => applyFilter());
 
-  // Speed toggles only need to refresh displayed file path
-  spdNormal.addEventListener("change", () => select(activeIdx, false));
-  spdSlow.addEventListener("change", () => select(activeIdx, false));
+  el("next").addEventListener("click", () => next());
+  el("prev").addEventListener("click", () => prev());
+  el("shuffle").addEventListener("click", () => shuffle());
 
-  // Exam mode
-  examToggle.addEventListener("change", (e) => setExamMode(e.target.checked));
-  revealBtn.addEventListener("click", () => revealOnce());
+  el("replay").addEventListener("click", async () => {
+    if (quizMode) await playThai();
+    else await playChinese();
+  });
 
-  // Init
+  el("playTh").addEventListener("click", async () => {
+    if (!quizMode) {
+      alert("请先进入测验模式（点击：听音问答）");
+      return;
+    }
+    await playThai();
+  });
+
+  el("playZh").addEventListener("click", async () => {
+    if (!quizMode) {
+      alert("请先进入测验模式（点击：听音问答）");
+      return;
+    }
+    await playChinese();
+  });
+
+  el("showAns").addEventListener("click", () => {
+    if (!quizMode) {
+      alert("请先进入测验模式（点击：听音问答）");
+      return;
+    }
+    quizReveal = true;
+    renderQuizCard();
+  });
+
+  el("quiz").addEventListener("click", async () => {
+    quizMode = !quizMode;
+    quizReveal = false;
+
+    // 从当前学习位置开始
+    quizIdx = activeIdx;
+
+    updateModeUI();
+    renderList();
+
+    if (quizMode) {
+      renderQuizCard();
+      await playThai();
+    } else {
+      renderStudyCard();
+    }
+  });
+
+  el("mark").addEventListener("click", () => markKnown());
+  el("reset").addEventListener("click", () => resetKnown());
+
+  // ------------------------------
+  // Lightweight tests (no framework)
+  // ------------------------------
+  function assert(cond, msg) {
+    if (!cond) throw new Error("Test failed: " + msg);
+  }
+  function runTests() {
+    // CSV parsing tests
+    const sample = "Thai,Chinese_Pinyin,TTS_Key\nสวัสดี,你好 nǐ hǎo,zh_cn_0001\n";
+    const rows = parseCSV(sample);
+    assert(rows.length === 2, "parseCSV should return 2 rows incl header");
+    const head = rows[0];
+    assert(head[0] === "Thai" && head[2] === "TTS_Key", "header columns parsed");
+
+    const s = splitZhPy("你好 nǐ hǎo");
+    assert(s.zh === "你好", "splitZhPy zh part");
+    assert(s.py.includes("nǐ"), "splitZhPy py part");
+
+    const s2 = splitZhPy("不用谢");
+    assert(s2.zh === "不用谢" && s2.py === "", "splitZhPy no pinyin");
+  }
+
   (async function init(){
     try {
+      runTests();
       statusEl.textContent = "加载中…";
       DATA = await loadCSV();
       if (!DATA.length) throw new Error("CSV empty");
       VIEW = DATA.slice();
       statusEl.textContent = `已加载：phrases.csv（${DATA.length}条）`;
+
+      updateModeUI();
       renderList();
-      select(0, false);
+      renderStudyCard();
     } catch (e) {
-      statusEl.textContent = "错误：找不到 phrases.csv";
-      alert("找不到 phrases.csv。请把 phrases.csv 放在 index.html 同一目录。\n并确保用静态网站方式打开（不要用 Drive 文本预览）。");
+      console.error(e);
+      statusEl.textContent = "错误：无法加载";
+      alert(
+        "初始化失败。\n" +
+        "请检查：\n" +
+        "1) phrases.csv 与 index.html 同一目录\n" +
+        "2) CSV 编码为 UTF-8\n" +
+        "3) 使用静态网站方式打开（不要用 Drive 文本预览）\n\n" +
+        "错误信息：" + (e && e.message ? e.message : String(e))
+      );
     }
   })();
 </script>
