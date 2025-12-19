@@ -137,7 +137,7 @@
       </div>
       <span class="pill">普通：点列表播中文｜测验：题目=泰语+泰语音频；答案=中文+拼音（四选一）</span>
       <span class="pill" id="status">未加载</span>
-      <span class="pill" id="csvWhere">CSV：/phrases.csv</span>
+      <span class="pill" id="csvWhere">CSV：/lesson100/phrases.csv</span>
     </div>
   </div>
 </header>
@@ -412,7 +412,7 @@
 
   function loadCSV(){
     // Locked to your GitHub Pages structure
-    var url = "/phrases.csv";
+    var url = "/lesson100/phrases.csv";
 
     return fetch(url, { cache: "no-store" })
       .then(function(res){
