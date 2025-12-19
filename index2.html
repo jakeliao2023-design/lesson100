@@ -131,9 +131,13 @@
         中文常用语 100 句｜点读课件（CSV版）
         <br><span style="font-size:13px;color:#94a3b8">บทเรียนภาษาจีน 100 ประโยค (คลิกเพื่อฟังเสียง)</span>
       </h1>
+      <div style="font-size:13px;color:#fbbf24;margin-bottom:2px">
+        <b>提示：</b>考试模式下不能查看答案，全部答完后统一显示成绩和错题。<br>
+        <span style="color:#60a5fa">คำแนะนำ: ในโหมดสอบจะไม่สามารถดูคำตอบได้ จะแสดงผลคะแนนและข้อผิดหลังจากทำครบทุกข้อ</span>
+      </div>
       <span class="pill">普通：点列表播中文｜测验：题目=泰语+泰语音频；答案=中文+拼音（四选一）</span>
       <span class="pill" id="status">未加载</span>
-      <span class="pill" id="csvWhere">CSV：/lesson100/phrases.csv</span>
+      <span class="pill" id="csvWhere">CSV：/phrases.csv</span>
     </div>
   </div>
 </header>
@@ -182,6 +186,7 @@
         <button class="btn" id="nextQ">下一题 ▶<br>ถัดไป</button>
         <button class="btn" id="mark">✓ 标记熟悉</button>
         <button class="btn danger" id="reset">重置熟悉</button>
+        <button class="btn danger" id="examMode">📝 考试模式<br>โหมดสอบ</button>
       </div>
 
       <div class="bd">
@@ -221,7 +226,7 @@
           <code>audio/</code>（中文音频）<code>&lt;key&gt;.mp3</code>（例 <code>audio/zh_cn_0001.mp3</code>）<br>
           <code>audio_th/</code>（泰语音频）<code>th_0001.mp3</code>（例 <code>audio_th/th_0001.mp3</code>）<br>
           <br>
-          <span class="warn"><b>提示：</b></span>CSV 固定从 <code>/lesson100/phrases.csv</code> 加载；请用 GitHub Pages 打开（不要 file:// / Drive 预览）。
+          <span class="warn"><b>提示：</b></span>CSV 固定从 <code>/phrases.csv</code> 加载；请用 GitHub Pages 打开（不要 file:// / Drive 预览）。
         </div>
       </div>
     </section>
@@ -407,7 +412,7 @@
 
   function loadCSV(){
     // Locked to your GitHub Pages structure
-    var url = "/lesson100/phrases.csv";
+    var url = "/phrases.csv";
 
     return fetch(url, { cache: "no-store" })
       .then(function(res){
@@ -916,6 +921,202 @@
       window.__tab = "practice";
       applyMobileTabs();
     }
+  });
+
+  // ====== 考试模式 ======
+  var examMode = false;
+  var examState = null;
+  var examPanel = null;
+
+  function renderExamUI() {
+    if (!examMode || !examState) return;
+    if (!examPanel) {
+      examPanel = document.createElement("div");
+      examPanel.id = "examPanel";
+      examPanel.style = "position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(11,18,32,.98);color:#e5e7eb;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 8px;";
+      document.body.appendChild(examPanel);
+    }
+    var total = examState.order.length;
+    var curIdx = examState.current;
+    var curQ = VIEW[examState.order[curIdx]];
+    var sp = splitZhPy(curQ[1]);
+    var progress = "<div style='margin-bottom:10px;font-size:15px'>题目 " + (curIdx+1) + "/" + total + "</div>";
+    var th = "<div style='font-size:22px;font-weight:900;margin-bottom:12px'>" + curQ[0] + "</div>";
+    var audioBtn = "<button class='btn primary' id='examPlayTh' style='margin-bottom:10px'>▶ 播放泰语</button>";
+    var opts = [];
+    var correctKey = curQ[2];
+    var pool = [correctKey];
+    while (pool.length < 4) {
+      var pick = VIEW[Math.floor(Math.random()*VIEW.length)][2];
+      if (!pool.includes(pick)) pool.push(pick);
+    }
+    pool = shuffle(pool.map(function(k){
+      var item = VIEW.find(function(x){return x[2]===k;});
+      var s = splitZhPy(item[1]);
+      return {key:k, zh:s.zh, py:s.py};
+    }));
+    for (var i=0;i<pool.length;i++) {
+      var o = pool[i];
+      var letter = String.fromCharCode(65+i);
+      var btn = "<button class='btn choiceBtn' data-key='"+o.key+"' style='margin:6px 0;width:100%;font-size:17px'>"+letter+". "+o.zh+ (o.py?" ("+o.py+")":"")+"</button>";
+      opts.push(btn);
+    }
+    var finishBtn = "";
+    // 判断是否全部作答
+    var allAnswered = examState.answers.every(function(a){return !!a;});
+    if (allAnswered) finishBtn = "<button class='btn danger' id='examFinish' style='margin-top:10px'>交卷</button>";
+    examPanel.innerHTML = "<div style='max-width:420px;width:100%;background:rgba(15,26,48,.98);border-radius:16px;padding:24px 12px;box-shadow:0 2px 24px #0008;text-align:center'>"
+      + progress + th + audioBtn
+      + opts.join("")
+      + finishBtn
+      + "<div style='margin-top:18px'><button class='btn' id='examQuit'>退出考试</button></div>"
+      + "</div>";
+    // 事件绑定
+    document.getElementById("examPlayTh").onclick = function(){ safePlay(thAudioPath(correctKey)); };
+    // 自动播放泰语音频
+    if (!examState._autoPlayed || examState._autoPlayed !== curIdx) {
+      safePlay(thAudioPath(correctKey));
+      examState._autoPlayed = curIdx;
+    }
+    var btns = examPanel.querySelectorAll(".choiceBtn");
+    btns.forEach(function(btn){
+      btn.onclick = function(){
+        var ans = btn.getAttribute("data-key");
+        examState.answers[curIdx] = ans;
+        examState.selected = ans;
+        // 自动跳到下一题，若已到最后一题则不跳
+        if (curIdx < total-1) {
+          examState.current++;
+          renderExamUI();
+        } else {
+          renderExamUI();
+        }
+      };
+    });
+    // 高亮已选项
+    if (examState.answers[curIdx]) {
+      btns.forEach(function(btn){
+        if (btn.getAttribute("data-key") === examState.answers[curIdx]) {
+          btn.classList.add("primary");
+        }
+      });
+    }
+    var fbtn = document.getElementById("examFinish");
+    if (fbtn) fbtn.onclick = function(){ finishExam(); };
+    document.getElementById("examQuit").onclick = function(){ if(confirm("确定退出考试？成绩将不会保存。")){ exitExam(); } };
+    // 若全部作答完毕，自动弹出交卷按钮
+    if (allAnswered && curIdx === total-1) {
+      // 可选：自动弹窗或高亮交卷按钮
+    }
+  }
+
+  function finishExam() {
+    examState.endTime = Date.now();
+    var total = examState.order.length;
+    var right = 0;
+    for (var i=0;i<total;i++) {
+      if (VIEW[examState.order[i]][2] === examState.answers[i]) right++;
+    }
+    examState.score = right;
+    renderExamResult();
+  }
+
+  function renderExamResult() {
+    if (!examPanel) return;
+    var total = examState.order.length;
+    var right = examState.score;
+    var wrongIdxs = [];
+    var correctIdxs = [];
+    for (var i=0;i<total;i++) {
+      if (VIEW[examState.order[i]][2] !== examState.answers[i]) wrongIdxs.push(i);
+      else correctIdxs.push(i);
+    }
+    var timeSec = Math.round((examState.endTime-examState.startTime)/1000);
+    var html = "<div style='max-width:420px;width:100%;background:rgba(15,26,48,.98);border-radius:16px;padding:24px 12px;box-shadow:0 2px 24px #0008;text-align:center'>"
+      + "<div style='font-size:22px;font-weight:900;margin-bottom:10px'>考试结束</div>"
+      + "<div style='font-size:17px;margin-bottom:10px'>成绩：<b>"+right+" / "+total+"</b> 正确率：<b>"+Math.round(right/total*100)+"%</b></div>"
+      + "<div style='color:#94a3b8;margin-bottom:10px'>用时："+timeSec+" 秒</div>";
+    if (wrongIdxs.length) {
+      html += "<div style='margin:14px 0 8px;font-weight:700;color:#fb7185'>错题回顾：</div>";
+      for (var j=0;j<wrongIdxs.length;j++) {
+        var idx = wrongIdxs[j];
+        var q = VIEW[examState.order[idx]];
+        var sp = splitZhPy(q[1]);
+        html += "<div style='margin-bottom:10px;text-align:left;background:rgba(251,113,133,.08);padding:8px 10px;border-radius:8px'>"
+          + "<b>题"+(idx+1)+".</b> " + q[0] + "<br>"
+          + "<span style='color:#fbbf24'>你的答案：</span>" + getZhByKey(examState.answers[idx]) + "<br>"
+          + "<span style='color:#22c55e'>正确答案：</span>" + sp.zh + (sp.py?" ("+sp.py+")":"") + "<br>"
+          + "<button class='btn tight' onclick=\"window.examPlayAudio('"+q[2]+"')\">▶ 听泰语</button>"
+          + "</div>";
+      }
+    }
+    if (correctIdxs.length) {
+      html += "<div style='margin:14px 0 8px;font-weight:700;color:#22c55e'>答对题目：</div>";
+      for (var j=0;j<correctIdxs.length;j++) {
+        var idx = correctIdxs[j];
+        var q = VIEW[examState.order[idx]];
+        var sp = splitZhPy(q[1]);
+        html += "<div style='margin-bottom:10px;text-align:left;background:rgba(34,197,94,.08);padding:8px 10px;border-radius:8px'>"
+          + "<b>题"+(idx+1)+".</b> " + q[0] + "<br>"
+          + "<span style='color:#22c55e'>你的答案：</span>" + getZhByKey(examState.answers[idx]) + "<br>"
+          + "<span style='color:#22c55e'>正确答案：</span>" + sp.zh + (sp.py?" ("+sp.py+")":"") + "<br>"
+          + "<button class='btn tight' onclick=\"window.examPlayAudio('"+q[2]+"')\">▶ 听泰语</button>"
+          + "</div>";
+      }
+    }
+    if (!wrongIdxs.length && correctIdxs.length) {
+      html += "<div style='margin:18px 0;color:#22c55e'>全部答对，太棒了！</div>";
+    }
+    html += "<div style='margin-top:18px'><button class='btn' id='examQuit'>退出考试</button></div></div>";
+    examPanel.innerHTML = '<div style="max-height:90vh;overflow:auto;">' + html + '</div>';
+    document.getElementById("examQuit").onclick = function(){ exitExam(); };
+    window.examPlayAudio = function(key){ safePlay(thAudioPath(key)); };
+    // 考试总结
+    var summary = `<div style="margin:18px 0 0 0;padding:10px 0 0 0;border-top:1px solid #334155;font-size:15px;color:#fbbf24">
+      <b>考试总结：</b><br>
+      1. 请认真核对错题，反复练习。<br>
+      2. 可点击“听泰语”按钮复习发音。<br>
+      3. 如需重新考试，请点击“退出考试”再进入。<br>
+      <span style="color:#60a5fa">สรุป: กรุณาตรวจสอบข้อผิดพลาดและฝึกซ้ำ สามารถกดฟังเสียงภาษาไทยได้ หากต้องการสอบใหม่ให้กด "ออกจากโหมดสอบ" แล้วเข้าใหม่</span>
+    </div>`;
+    examPanel.innerHTML += summary;
+  }
+
+  function getZhByKey(key) {
+    var item = VIEW.find(function(x){return x[2]===key;});
+    if (!item) return "-";
+    var sp = splitZhPy(item[1]);
+    return sp.zh + (sp.py?" ("+sp.py+")":"");
+  }
+
+  function exitExam() {
+    examMode = false;
+    examState = null;
+    if (examPanel) { examPanel.remove(); examPanel = null; }
+    updateModeUI();
+    renderList();
+    renderStudyCard();
+  }
+
+  el("examMode").addEventListener("click", function(){
+    if (examMode) return;
+    if (!confirm("进入考试模式？考试期间不能查看答案，交卷后显示成绩和错题。")) return;
+    examMode = true;
+    // 锁定顺序，初始化状态
+    var order = [];
+    for (var i=0;i<VIEW.length;i++) order.push(i);
+    shuffle(order);
+    examState = {
+      order: order,
+      current: 0,
+      answers: Array(VIEW.length).fill(null),
+      startTime: Date.now(),
+      endTime: null,
+      score: 0,
+      wrongList: [],
+      answered: false
+    };
+    renderExamUI();
   });
 
   audio.addEventListener("ended", function(){
